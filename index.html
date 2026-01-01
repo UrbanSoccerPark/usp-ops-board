@@ -42,12 +42,37 @@
     .header-left{
       display:flex;
       flex-direction:column;
-      gap:6px;
-      min-width: 0;
+      gap:10px;
+      min-width:0;
     }
 
     h1{ margin:0; font-size:42px; letter-spacing:.4px; }
     .sub{ font-size:18px; color:var(--muted); }
+
+    .tabs{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    .tab{
+      appearance:none;
+      border:1px solid var(--grid);
+      background:#ffffff;
+      color:var(--text);
+      padding:10px 14px;
+      border-radius:999px;
+      font-weight:700;
+      font-size:14px;
+      cursor:pointer;
+    }
+
+    .tab.active{
+      background:#111827;
+      color:#ffffff;
+      border-color:#111827;
+    }
 
     .logo{
       height:52px;
@@ -170,8 +195,13 @@
 <body>
 <header>
   <div class="header-left">
-    <h1>USP Operations Weekly Schedule</h1>
-    <div class="sub" id="weekLabel">Loading week…</div>
+    <div>
+      <h1>USP Operations Weekly Schedule</h1>
+      <div class="sub" id="weekLabel">Loading week…</div>
+    </div>
+
+    <!-- Tabs render here -->
+    <div class="tabs" id="tabs"></div>
   </div>
 
   <!-- Logo on the RIGHT -->
@@ -196,14 +226,8 @@
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS9dYykqhLDctkDUvYOrX5buK09uK1hHaryxnro6YiHltFPKyTCkd_ji_pWWdIPfy-XdlNB-XhTMv0-/pub?gid=0&single=true&output=csv";
 const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 
-/* Department order requested */
-const DEPT_RANK = {
-  operations: 1,
-  warehouse: 2,
-  installation: 3,
-  turf: 4,
-  wellness: 5
-};
+/* Department order */
+const DEPT_RANK = { operations:1, warehouse:2, installation:3, turf:4, wellness:5 };
 
 function normalizeDept(d=""){
   d = d.toLowerCase().trim();
@@ -219,6 +243,19 @@ function normalizeDept(d=""){
 function getTodayAbbrev(){
   const map = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
   return map[new Date().getDay()];
+}
+
+function mondayOfThisWeekISO(){
+  const d = new Date();
+  const day = d.getDay(); // Sun=0..Sat=6
+  const diff = (day === 0 ? -6 : 1 - day); // move to Monday
+  const monday = new Date(d);
+  monday.setDate(d.getDate() + diff);
+  monday.setHours(0,0,0,0);
+  const y = monday.getFullYear();
+  const m = String(monday.getMonth()+1).padStart(2,"0");
+  const da = String(monday.getDate()).padStart(2,"0");
+  return `${y}-${m}-${da}`;
 }
 
 function parseCSV(text){
@@ -290,6 +327,35 @@ function getCellBg(r){
   return "#ffffff";
 }
 
+function buildTabs(weekStarts, selected, onSelect){
+  const el = document.getElementById("tabs");
+  el.innerHTML = "";
+
+  if (weekStarts.length <= 1) return;
+
+  const thisMon = mondayOfThisWeekISO();
+  const idxThis = weekStarts.indexOf(thisMon);
+
+  // Prefer labeling based on actual Monday match when possible
+  const thisWeek = (idxThis !== -1) ? thisMon : weekStarts[weekStarts.length - 2] || weekStarts[0];
+  const nextWeek = (idxThis !== -1)
+    ? (weekStarts[idxThis + 1] || weekStarts[weekStarts.length - 1])
+    : (weekStarts[weekStarts.length - 1] || weekStarts[0]);
+
+  const tabDefs = [
+    {label:"This Week", week_start:thisWeek},
+    {label:"Next Week", week_start:nextWeek}
+  ].filter((t, i, arr) => t.week_start && arr.findIndex(x => x.week_start === t.week_start) === i); // unique
+
+  for (const t of tabDefs){
+    const btn = document.createElement("button");
+    btn.className = "tab" + (t.week_start === selected ? " active" : "");
+    btn.textContent = t.label;
+    btn.onclick = () => onSelect(t.week_start);
+    el.appendChild(btn);
+  }
+}
+
 function buildBoard(records){
   const weekStart = (records[0]?.week_start) || "";
   document.getElementById("weekLabel").textContent = weekStart ? `Week of ${weekStart}` : "";
@@ -304,14 +370,14 @@ function buildBoard(records){
     byPerson.get(r.person).push(r);
   }
 
-  // Default dept per person: always prefer default_department from CSV (even for off-only people)
+  // Default dept per person: always prefer default_department
   const personDefaultDept = {};
   for (const [p, recs] of byPerson.entries()){
     const dd = normalizeDept(recs.find(x => (x.default_department || "").trim() !== "")?.default_department || "");
     personDefaultDept[p] = dd;
   }
 
-  // Sort people: dept rank, then name
+  // Sort: dept rank then name
   const people = [...byPerson.keys()].sort((a,b)=>{
     const da = personDefaultDept[a];
     const db = personDefaultDept[b];
@@ -353,7 +419,7 @@ function buildBoard(records){
   thead.appendChild(hr);
   table.appendChild(thead);
 
-  // Body (no department divider rows)
+  // Body
   const tbody = document.createElement("tbody");
 
   for (const p of people){
@@ -399,17 +465,32 @@ function buildBoard(records){
   table.appendChild(tbody);
 }
 
+let allRows = [];
+let selectedWeekStart = "";
+
+function render(){
+  const weekStarts = [...new Set(allRows.map(r => r.week_start).filter(Boolean))].sort();
+  if (!selectedWeekStart){
+    const thisMon = mondayOfThisWeekISO();
+    selectedWeekStart = weekStarts.includes(thisMon) ? thisMon : (weekStarts[weekStarts.length - 1] || "");
+  }
+
+  buildTabs(weekStarts, selectedWeekStart, (ws) => {
+    selectedWeekStart = ws;
+    render();
+  });
+
+  const filtered = selectedWeekStart ? allRows.filter(r => r.week_start === selectedWeekStart) : allRows;
+  buildBoard(filtered);
+}
+
 async function init(){
   const res = await fetch(CSV_URL, {cache:"no-store"});
   const text = await res.text();
-  const recs = parseCSV(text);
+  allRows = parseCSV(text);
 
-  // If multiple weeks exist, show latest (works if week_start is YYYY-MM-DD)
-  const weeks = [...new Set(recs.map(r=>r.week_start).filter(Boolean))].sort();
-  const latest = weeks[weeks.length-1];
-  const filtered = latest ? recs.filter(r=>r.week_start===latest) : recs;
+  render();
 
-  buildBoard(filtered);
   setTimeout(init, 120000);
 }
 init();
