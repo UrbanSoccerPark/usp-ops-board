@@ -3,27 +3,24 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>USP Weekly Operations Schedule</title>
+  <title>USP Operations Weekly Schedule</title>
 
   <style>
     :root{
-      /* Light theme */
       --bg:#ffffff;
       --panel:#f5f7fb;
       --grid:#e1e5ee;
       --text:#111827;
       --muted:#4b5563;
 
-      /* Dept colors */
-      --wh:#dbeafe;   /* Warehouse */
-      --in:#fde68a;   /* Installation */
-      --tu:#bbf7d0;   /* Turf */
-      --op:#e9d5ff;   /* Operations */
-      --we:#ffe4e6;   /* Wellness */
+      --wh:#dbeafe;
+      --in:#fde68a;
+      --tu:#bbf7d0;
+      --op:#e9d5ff;
+      --we:#ffe4e6;
 
-      /* Status colors */
-      --tr:#cffafe;   /* Travel – aqua */
-      --off:#f1f5f9;  /* Off */
+      --tr:#cffafe;
+      --off:#f1f5f9;
 
       /* Auto-fit variables (set by JS) */
       --rowH: 90px;
@@ -32,9 +29,11 @@
       --nameFS: 20px;
       --taskFS: 22px;
       --projFS: 16px;
-      --cellPadY: 14px;
-      --cellPadX: 16px;
-      --cellGap: 6px;
+
+      /* NEW: tighter internal padding, no outer padding */
+      --cellPadY: 8px;
+      --cellPadX: 10px;
+      --cellGap: 5px;
     }
 
     *{ box-sizing:border-box; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; }
@@ -52,7 +51,6 @@
       position: sticky;
       top: 0;
       z-index: 50;
-
       display:flex;
       justify-content:space-between;
       align-items:center;
@@ -143,12 +141,11 @@
       overflow:hidden;
     }
 
-    /* Day header row */
     .board thead th{
       background:var(--panel);
-      padding:10px 10px;
-      font-size:18px;
-      border-bottom:1px solid var(--grid);
+      padding:14px 10px;
+      font-size:20px;
+      border-bottom:2px solid var(--grid);
       text-align:center;
       font-weight:800;
       position: sticky;
@@ -162,16 +159,19 @@
       padding-left:18px;
     }
 
+    /* ✅ KEY CHANGE: remove td padding so the color fills the full cell */
     .board td, .board tbody th{
       height: var(--rowH);
-      padding:12px;
+      padding: 0; /* was 12px */
       border-right:1px solid var(--grid);
       border-bottom:1px solid var(--grid);
       vertical-align:middle;
       background:#fff;
     }
 
+    /* Keep name column readable with its own padding */
     .board tbody th{
+      padding: 0 12px;
       font-weight:800;
       letter-spacing:.4px;
       background:#ffffff;
@@ -181,15 +181,17 @@
       text-overflow:ellipsis;
     }
 
+    /* ✅ Cell becomes full-bleed */
     .cell{
+      width:100%;
       height:100%;
-      border-radius:12px;
+      border-radius:0; /* full-bleed rectangle inside grid */
       padding: var(--cellPadY) var(--cellPadX);
       display:flex;
       flex-direction:column;
       justify-content:center;
       gap: var(--cellGap);
-      border:1px solid rgba(0,0,0,.08);
+      border: 0; /* remove inner border to maximize space */
     }
 
     .big{
@@ -204,13 +206,13 @@
 
     .small{
       font-size: var(--projFS);
-      color:#374151;
+      color:#111827; /* darker since background is colored */
       line-height:1.12;
       overflow:hidden;
       display:-webkit-box;
       -webkit-box-orient:vertical;
       -webkit-line-clamp:1;
-      opacity:.92;
+      opacity:.82;
     }
 
     .board thead th.today{
@@ -221,18 +223,19 @@
       background:#fef3c7;
     }
     .board td.today .cell{
-      box-shadow:0 0 0 3px #111827;
+      box-shadow: inset 0 0 0 3px #111827;
     }
 
+    /* OFF styling */
     .cell.off{
       background:var(--off) !important;
-      opacity:0.88;
-      border:2px dashed rgba(17,24,39,.35);
+      opacity:0.92;
+      border: 0;
       filter:grayscale(.10);
     }
     .cell.off .big,
     .cell.off .small{
-      color:rgba(17,24,39,.65);
+      color:rgba(17,24,39,.72);
     }
   </style>
 </head>
@@ -241,7 +244,7 @@
 <header>
   <div class="header-left">
     <div>
-      <h1>USP Weekly Operations Schedule</h1>
+      <h1>USP Operations Weekly Schedule</h1>
       <div class="sub" id="weekLabel">Loading week…</div>
     </div>
 
@@ -250,11 +253,11 @@
 
   <div class="header-right">
     <div class="legend" aria-label="Color legend">
-      <div class="tag"><span class="sw" style="background:var(--op)"></span>Office</div>
-      <div class="tag"><span class="sw" style="background:var(--wh)"></span>Warehouse</div>
-      <div class="tag"><span class="sw" style="background:var(--in)"></span>Install</div>
+      <div class="tag"><span class="sw" style="background:var(--op)"></span>Ops</div>
+      <div class="tag"><span class="sw" style="background:var(--wh)"></span>WH</div>
+      <div class="tag"><span class="sw" style="background:var(--in)"></span>Inst</div>
       <div class="tag"><span class="sw" style="background:var(--tu)"></span>Turf</div>
-      <div class="tag"><span class="sw" style="background:var(--we)"></span>Wellness</div>
+      <div class="tag"><span class="sw" style="background:var(--we)"></span>Well</div>
       <div class="tag"><span class="sw" style="background:var(--tr)"></span>Travel</div>
       <div class="tag"><span class="sw" style="background:var(--off)"></span>Off</div>
     </div>
@@ -270,29 +273,29 @@
 <script>
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS9dYykqhLDctkDUvYOrX5buK09uK1hHaryxnro6YiHltFPKyTCkd_ji_pWWdIPfy-XdlNB-XhTMv0-/pub?gid=0&single=true&output=csv";
 
-/* ✅ Reverted to Mon–Fri only */
-const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-
-/* Department order */
+/* Mon–Fri */
+const DAYS = ["Mon","Tue","Wed","Thu","Fri"];
 const DEPT_RANK = { operations:1, warehouse:2, installation:3, turf:4, wellness:5 };
 
 let allRows = [];
 let selectedWeekStart = "";
 let lastEmployeeCount = 0;
 
-/* ---------- Fit-all-rows mode (still uses total employee count) ---------- */
+/* Fit-all-rows mode */
 const FIT_LIMIT = 19;
 
 function applySizingForRowH(rowH){
-  const nameFS = Math.max(12, Math.min(20, Math.floor(rowH * 0.26)));
-  const taskFS = Math.max(13, Math.min(22, Math.floor(rowH * 0.30)));
-  const projFS = Math.max(11, Math.min(16, Math.floor(rowH * 0.22)));
+  // ✅ Slightly larger fonts since we reclaimed space
+  const nameFS = Math.max(12, Math.min(22, Math.floor(rowH * 0.28)));
+  const taskFS = Math.max(14, Math.min(24, Math.floor(rowH * 0.34)));
+  const projFS = Math.max(11, Math.min(18, Math.floor(rowH * 0.24)));
 
-  const cellPadY = Math.max(5, Math.min(12, Math.floor(rowH * 0.13)));
-  const cellPadX = Math.max(7, Math.min(14, Math.floor(rowH * 0.17)));
+  // ✅ tight internal padding only
+  const cellPadY = Math.max(5, Math.min(10, Math.floor(rowH * 0.12)));
+  const cellPadX = Math.max(7, Math.min(12, Math.floor(rowH * 0.15)));
   const cellGap  = Math.max(3, Math.min(6, Math.floor(rowH * 0.06)));
 
-  const empColW = Math.max(175, Math.min(240, Math.floor(window.innerWidth * 0.12)));
+  const empColW = Math.max(175, Math.min(255, Math.floor(window.innerWidth * 0.13)));
 
   const root = document.documentElement.style;
   root.setProperty("--rowH", `${rowH}px`);
@@ -309,7 +312,7 @@ function applyAutoFitToViewport(numEmployees){
   lastEmployeeCount = numEmployees;
 
   let rowH = Math.floor((window.innerHeight * 0.62) / Math.max(numEmployees, 1));
-  rowH = Math.max(46, Math.min(90, rowH));
+  rowH = Math.max(44, Math.min(92, rowH));
   applySizingForRowH(rowH);
 
   if (numEmployees <= FIT_LIMIT){
@@ -329,8 +332,8 @@ function applyAutoFitToViewport(numEmployees){
     let tableHeaderH = thead ? thead.getBoundingClientRect().height : 64;
     if (!tableHeaderH || tableHeaderH < 40) tableHeaderH = 64;
 
-    let minRowH = 42;
-    const maxIterations = 18;
+    let minRowH = 40;
+    const maxIterations = 20;
 
     for (let i=0; i<maxIterations; i++){
       const tbody = table ? table.querySelector("tbody") : null;
@@ -350,7 +353,6 @@ window.addEventListener("resize", () => {
   if (lastEmployeeCount) requestAnimationFrame(() => applyAutoFitToViewport(lastEmployeeCount));
 });
 
-/* ---------- Helpers ---------- */
 function normalizeDept(d=""){
   d = d.toLowerCase().trim();
   if (!d) return "";
@@ -447,7 +449,6 @@ function getCellBg(r){
   return "#ffffff";
 }
 
-/* ✅ Off-all-week logic now checks Mon–Fri only */
 function isEmployeeOffAllWeek(employeeRecordsByDay){
   let anyDay = false;
   let anyNonOff = false;
@@ -464,7 +465,6 @@ function isEmployeeOffAllWeek(employeeRecordsByDay){
   return false;
 }
 
-/* Tabs */
 function buildTabs(weekStarts, selected, onSelect){
   const el = document.getElementById("tabs");
   el.innerHTML = "";
@@ -492,14 +492,12 @@ function buildTabs(weekStarts, selected, onSelect){
   }
 }
 
-/* Board */
 function buildBoard(records){
   const weekStart = (records[0]?.week_start) || "";
   document.getElementById("weekLabel").textContent = weekStart ? `Week of ${weekStart}` : "";
 
   const today = getTodayAbbrev();
 
-  // Group by employee
   const byEmployee = new Map();
   for (const r of records){
     if (!r.employee) continue;
@@ -507,25 +505,22 @@ function buildBoard(records){
     byEmployee.get(r.employee).push(r);
   }
 
-  // Default dept for each employee
   const employeeDefaultDept = {};
   for (const [e, recs] of byEmployee.entries()){
     const ddRaw = recs.find(x => (x.default_department || "").trim() !== "")?.default_department || "";
     employeeDefaultDept[e] = normalizeDept(ddRaw);
   }
 
-  // Per-employee day index (Mon–Fri)
   const dayIndexByEmployee = new Map();
   for (const e of byEmployee.keys()) dayIndexByEmployee.set(e, {});
   for (const r of records){
     const e = r.employee;
     if (!e) continue;
     const d = normDay(r.day);
-    if (!DAYS.includes(d)) continue; /* ✅ ignores Sat/Sun records even if present */
+    if (!DAYS.includes(d)) continue;
     dayIndexByEmployee.get(e)[d] = r;
   }
 
-  // Off-all-week bucket (Mon–Fri)
   const employees = [...byEmployee.keys()];
   const offAllWeekSet = new Set();
   for (const e of employees){
@@ -548,7 +543,6 @@ function buildBoard(records){
 
   const sortedEmployees = [...active, ...offAll];
 
-  // Build table
   const table = document.getElementById("board");
   table.innerHTML = "";
 
