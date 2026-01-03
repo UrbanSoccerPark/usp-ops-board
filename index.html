@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>USP Operations Weekly Schedule</title>
+  <title>USP Weekly Operations Calendar</title>
 
   <style>
     :root{
@@ -13,14 +13,14 @@
       --text:#111827;
       --muted:#4b5563;
 
-      --wh:#dbeafe;
-      --in:#fde68a;
-      --tu:#bbf7d0;
-      --op:#e9d5ff;
-      --we:#ffe4e6;
+      --wh:#dbeafe;   /* Warehouse */
+      --in:#fde68a;   /* Install */
+      --tu:#bbf7d0;   /* Turf */
+      --op:#e9d5ff;   /* Office */
+      --we:#ffe4e6;   /* Wellness */
 
-      --tr:#cffafe;
-      --off:#f1f5f9;
+      --tr:#cffafe;   /* Travel */
+      --off:#f1f5f9;  /* Off */
 
       /* Auto-fit variables (set by JS) */
       --rowH: 90px;
@@ -30,10 +30,14 @@
       --taskFS: 22px;
       --projFS: 16px;
 
-      /* NEW: tighter internal padding, no outer padding */
+      /* tighter internal padding */
       --cellPadY: 8px;
       --cellPadX: 10px;
       --cellGap: 5px;
+
+      /* NEW: cell rounding (nearly full-bleed) */
+      --cellRadius: 6px;
+      --cellInset: 2px; /* tiny breathing room to preserve grid lines */
     }
 
     *{ box-sizing:border-box; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; }
@@ -68,7 +72,8 @@
       flex: 1 1 auto;
     }
 
-    h1{ margin:0; font-size:40px; letter-spacing:.4px; }
+    /* ✅ 20% smaller than 40px => 32px */
+    h1{ margin:0; font-size:32px; letter-spacing:.3px; }
     .sub{ font-size:18px; color:var(--muted); }
 
     .tabs{
@@ -111,7 +116,7 @@
       justify-content:flex-end;
       font-size:13px;
       color:var(--muted);
-      max-width: 520px;
+      max-width: 560px;
     }
 
     .tag{display:flex;align-items:center;gap:6px}
@@ -122,7 +127,7 @@
     }
 
     .logo{
-      height:50px;
+      height:46px;
       width:auto;
       object-fit:contain;
       flex:0 0 auto;
@@ -159,17 +164,17 @@
       padding-left:18px;
     }
 
-    /* ✅ KEY CHANGE: remove td padding so the color fills the full cell */
+    /* Remove td padding so cell can be almost full-bleed */
     .board td, .board tbody th{
       height: var(--rowH);
-      padding: 0; /* was 12px */
+      padding: 0;
       border-right:1px solid var(--grid);
       border-bottom:1px solid var(--grid);
       vertical-align:middle;
       background:#fff;
     }
 
-    /* Keep name column readable with its own padding */
+    /* Name column padding */
     .board tbody th{
       padding: 0 12px;
       font-weight:800;
@@ -181,17 +186,20 @@
       text-overflow:ellipsis;
     }
 
-    /* ✅ Cell becomes full-bleed */
+    /* ✅ Nearly full-bleed rounded “card” without wasting space */
     .cell{
-      width:100%;
-      height:100%;
-      border-radius:0; /* full-bleed rectangle inside grid */
+      width: calc(100% - (var(--cellInset) * 2));
+      height: calc(100% - (var(--cellInset) * 2));
+      margin: var(--cellInset);
+      border-radius: var(--cellRadius);
+
       padding: var(--cellPadY) var(--cellPadX);
       display:flex;
       flex-direction:column;
       justify-content:center;
       gap: var(--cellGap);
-      border: 0; /* remove inner border to maximize space */
+
+      border:0;
     }
 
     .big{
@@ -206,7 +214,7 @@
 
     .small{
       font-size: var(--projFS);
-      color:#111827; /* darker since background is colored */
+      color:#111827;
       line-height:1.12;
       overflow:hidden;
       display:-webkit-box;
@@ -226,11 +234,10 @@
       box-shadow: inset 0 0 0 3px #111827;
     }
 
-    /* OFF styling */
     .cell.off{
       background:var(--off) !important;
       opacity:0.92;
-      border: 0;
+      border:0;
       filter:grayscale(.10);
     }
     .cell.off .big,
@@ -244,7 +251,7 @@
 <header>
   <div class="header-left">
     <div>
-      <h1>USP Operations Weekly Schedule</h1>
+      <h1>USP Weekly Operations Calendar</h1>
       <div class="sub" id="weekLabel">Loading week…</div>
     </div>
 
@@ -273,8 +280,8 @@
 <script>
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS9dYykqhLDctkDUvYOrX5buK09uK1hHaryxnro6YiHltFPKyTCkd_ji_pWWdIPfy-XdlNB-XhTMv0-/pub?gid=0&single=true&output=csv";
 
-/* Mon–Sun */
-const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat,"Sun"];
+/* Mon–Fri */
+const DAYS = ["Mon","Tue","Wed","Thu","Fri"];
 const DEPT_RANK = { operations:1, warehouse:2, installation:3, turf:4, wellness:5 };
 
 let allRows = [];
@@ -285,12 +292,10 @@ let lastEmployeeCount = 0;
 const FIT_LIMIT = 19;
 
 function applySizingForRowH(rowH){
-  // ✅ Slightly larger fonts since we reclaimed space
   const nameFS = Math.max(12, Math.min(22, Math.floor(rowH * 0.28)));
   const taskFS = Math.max(14, Math.min(24, Math.floor(rowH * 0.34)));
   const projFS = Math.max(11, Math.min(18, Math.floor(rowH * 0.24)));
 
-  // ✅ tight internal padding only
   const cellPadY = Math.max(5, Math.min(10, Math.floor(rowH * 0.12)));
   const cellPadX = Math.max(7, Math.min(12, Math.floor(rowH * 0.15)));
   const cellGap  = Math.max(3, Math.min(6, Math.floor(rowH * 0.06)));
@@ -637,4 +642,5 @@ init();
 </script>
 </body>
 </html>
+
 
