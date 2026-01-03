@@ -585,18 +585,18 @@ function buildBoard(records){
       if (d === today) td.classList.add("today");
 
       const taskTxt = (r.task || "").trim();
-const projTxt = (r.project || "").trim();
+      const projTxt = (r.project || "").trim();
 
-// Keep same behavior: show Task if present, otherwise fall back to Project
-const big = off
-  ? (taskTxt.toUpperCase().startsWith("PTO") ? "PTO" : "OFF")
-  : (taskTxt || projTxt);
+      // Keep same behavior: show Task if present, otherwise fall back to Project
+      const big = off
+      ? (taskTxt.toUpperCase().startsWith("PTO") ? "PTO" : "OFF")
+      : (taskTxt || projTxt);
 
-td.innerHTML = `
-  <div class="cell ${off ? "off" : ""}" style="background:${bg}">
+    td.innerHTML = `
+     <div class="cell ${off ? "off" : ""}" style="background:${bg}">
     <div class="big">${big || ""}</div>
-  </div>
-`;
+    </div>
+    `;
 
       }
 
