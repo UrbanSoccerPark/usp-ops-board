@@ -592,11 +592,11 @@ function buildBoard(records){
       ? (taskTxt.toUpperCase().startsWith("PTO") ? "PTO" : "OFF")
       : (taskTxt || projTxt);
 
-    td.innerHTML = `
-     <div class="cell ${off ? "off" : ""}" style="background:${bg}">
-    <div class="big">${big || ""}</div>
-    </div>
-    `;
+      td.innerHTML = `
+      <div class="cell ${off ? "off" : ""}" style="background:${bg}">
+      <div class="big">${big || ""}</div>
+      </div>
+      `;
 
       }
 
