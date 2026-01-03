@@ -584,23 +584,20 @@ function buildBoard(records){
       const td = document.createElement("td");
       if (d === today) td.classList.add("today");
 
-      const r = perDay[d];
-      if (r){
-        const off = isOffRow(r);
-        const bg = getCellBg(r);
+      const taskTxt = (r.task || "").trim();
+const projTxt = (r.project || "").trim();
 
-        const taskTxt = (r.task || "").trim();
-        const projTxt = (r.project || "").trim();
+// Keep same behavior: show Task if present, otherwise fall back to Project
+const big = off
+  ? (taskTxt.toUpperCase().startsWith("PTO") ? "PTO" : "OFF")
+  : (taskTxt || projTxt);
 
-        const big = off ? (taskTxt.toUpperCase().startsWith("PTO") ? "PTO" : "OFF") : (taskTxt || projTxt);
-        const small = off ? "" : (projTxt || "");
+td.innerHTML = `
+  <div class="cell ${off ? "off" : ""}" style="background:${bg}">
+    <div class="big">${big || ""}</div>
+  </div>
+`;
 
-        td.innerHTML = `
-          <div class="cell ${off ? "off" : ""}" style="background:${bg}">
-            <div class="big">${big || ""}</div>
-            ${small ? `<div class="small">${small}</div>` : ``}
-          </div>
-        `;
       }
 
       tr.appendChild(td);
