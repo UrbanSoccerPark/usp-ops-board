@@ -13,48 +13,43 @@
       --text:#111827;
       --muted:#4b5563;
 
-      --wh:#dbeafe;   /* Warehouse */
-      --in:#fde68a;   /* Install */
-      --tu:#bbf7d0;   /* Turf */
-      --op:#e9d5ff;   /* Office */
-      --we:#ffe4e6;   /* Wellness */
+      --wh:#dbeafe;
+      --in:#fde68a;
+      --tu:#bbf7d0;
+      --op:#e9d5ff;
+      --we:#ffe4e6;
 
-      --tr:#cffafe;   /* Travel */
-      --off:#f1f5f9;  /* Off */
+      --tr:#cffafe;
+      --dr:#fed7aa;
+      --off:#f1f5f9;
 
-      /* Auto-fit variables (set by JS) */
-      --rowH: 90px;
-      --empColW: 210px;
-
-      --nameFS: 20px;
-      --taskFS: 22px;
-      --projFS: 16px;
-
-      /* tighter internal padding */
-      --cellPadY: 8px;
-      --cellPadX: 10px;
-      --cellGap: 5px;
-
-      /* cell rounding (nearly full-bleed) */
-      --cellRadius: 6px;
-      --cellInset: 2px; /* tiny breathing room to preserve grid lines */
+      --rowH:90px;
+      --empColW:210px;
+      --nameFS:20px;
+      --taskFS:22px;
+      --projFS:16px;
+      --cellPadY:8px;
+      --cellPadX:10px;
+      --cellGap:5px;
+      --cellRadius:6px;
+      --cellInset:2px;
     }
 
-    *{ box-sizing:border-box; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; }
-    html, body { height:100%; }
+    *{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;}
+    html,body{height:100%;}
 
     body{
       margin:0;
       background:var(--bg);
       color:var(--text);
       overflow:auto;
-      overscroll-behavior: contain;
+      overscroll-behavior:contain;
     }
 
     header{
-      position: sticky;
-      top: 0;
-      z-index: 50;
+      position:sticky;
+      top:0;
+      z-index:50;
       display:flex;
       justify-content:space-between;
       align-items:center;
@@ -69,11 +64,11 @@
       flex-direction:column;
       gap:10px;
       min-width:0;
-      flex: 1 1 auto;
+      flex:1 1 auto;
     }
 
-    h1{ margin:0; font-size:32px; letter-spacing:.3px; }
-    .sub{ font-size:24px; color:var(--muted); }
+    h1{margin:0;font-size:32px;letter-spacing:.3px;}
+    .sub{font-size:18px;color:var(--muted);}
 
     .tabs{
       display:flex;
@@ -100,30 +95,11 @@
       border-color:#111827;
     }
 
-    /* Department filter pills */
-    #deptTabs{ gap:8px; }
-    .dept-pill{
-      appearance:none;
-      border:1px solid var(--grid);
-      background:#ffffff;
-      color:var(--text);
-      padding:10px 14px;
-      border-radius:999px;
-      font-weight:800;
-      font-size:14px;
-      cursor:pointer;
-    }
-    .dept-pill.active{
-      background:#111827;
-      color:#ffffff;
-      border-color:#111827;
-    }
-
     .header-right{
       display:flex;
       align-items:center;
       gap:18px;
-      flex: 0 0 auto;
+      flex:0 0 auto;
     }
 
     .legend{
@@ -132,16 +108,18 @@
       flex-wrap:wrap;
       align-items:center;
       justify-content:flex-end;
-      font-size:18px;
+      font-size:13px;
       color:var(--muted);
-      max-width: 720px;
+      max-width:620px;
     }
 
-    .tag{display:flex;align-items:center;gap:6px}
+    .tag{display:flex;align-items:center;gap:6px;}
     .sw{
-      width:16px;height:11px;border-radius:4px;
+      width:16px;
+      height:11px;
+      border-radius:4px;
       border:1px solid rgba(0,0,0,.2);
-      flex: 0 0 auto;
+      flex:0 0 auto;
     }
 
     .logo{
@@ -151,7 +129,7 @@
       flex:0 0 auto;
     }
 
-    main{ padding:18px 22px 28px; }
+    main{padding:18px 22px 28px;}
 
     .board{
       width:100%;
@@ -167,61 +145,57 @@
     .board thead th{
       background:var(--panel);
       padding:14px 10px;
-      font-size:16px;
+      font-size:20px;
       border-bottom:2px solid var(--grid);
       text-align:center;
       font-weight:800;
-      position: sticky;
-      top: 0;
-      z-index: 5;
+      position:sticky;
+      top:0;
+      z-index:5;
     }
 
     .board th.employee{
-      width: var(--empColW);
+      width:var(--empColW);
       text-align:left;
       padding-left:18px;
     }
 
-    /* Remove td padding so cell can be almost full-bleed */
-    .board td, .board tbody th{
-      height: var(--rowH);
-      padding: 0;
+    .board td,
+    .board tbody th{
+      height:var(--rowH);
+      padding:0;
       border-right:1px solid var(--grid);
       border-bottom:1px solid var(--grid);
       vertical-align:middle;
       background:#fff;
     }
 
-    /* Name column padding */
     .board tbody th{
-      padding: 0 12px;
+      padding:0 12px;
       font-weight:800;
       letter-spacing:.4px;
       background:#ffffff;
-      font-size: var(--nameFS);
+      font-size:var(--nameFS);
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
     }
 
-    /* Nearly full-bleed rounded “card” */
     .cell{
-      width: calc(100% - (var(--cellInset) * 2));
-      height: calc(100% - (var(--cellInset) * 2));
-      margin: var(--cellInset);
-      border-radius: var(--cellRadius);
-
-      padding: var(--cellPadY) var(--cellPadX);
+      width:calc(100% - (var(--cellInset) * 2));
+      height:calc(100% - (var(--cellInset) * 2));
+      margin:var(--cellInset);
+      border-radius:var(--cellRadius);
+      padding:var(--cellPadY) var(--cellPadX);
       display:flex;
       flex-direction:column;
       justify-content:center;
-      gap: var(--cellGap);
-
+      gap:var(--cellGap);
       border:0;
     }
 
     .big{
-      font-size: var(--taskFS);
+      font-size:var(--taskFS);
       font-weight:900;
       line-height:1.08;
       overflow:hidden;
@@ -231,7 +205,7 @@
     }
 
     .small{
-      font-size: var(--projFS);
+      font-size:var(--projFS);
       color:#111827;
       line-height:1.12;
       overflow:hidden;
@@ -245,19 +219,22 @@
       background:#111827;
       color:#ffffff;
     }
+
     .board td.today{
       background:#fef3c7;
     }
+
     .board td.today .cell{
-      box-shadow: inset 0 0 0 3px #111827;
+      box-shadow:inset 0 0 0 3px #111827;
     }
 
     .cell.off{
-      background:var(--off) !important;
-      opacity:0.92;
+      background:var(--off)!important;
+      opacity:.92;
       border:0;
       filter:grayscale(.10);
     }
+
     .cell.off .big,
     .cell.off .small{
       color:rgba(17,24,39,.72);
@@ -274,7 +251,6 @@
     </div>
 
     <div class="tabs" id="tabs"></div>
-    <div class="tabs" id="deptTabs" style="margin-top:6px;"></div>
   </div>
 
   <div class="header-right">
@@ -285,6 +261,7 @@
       <div class="tag"><span class="sw" style="background:var(--tu)"></span>Turf</div>
       <div class="tag"><span class="sw" style="background:var(--we)"></span>Wellness</div>
       <div class="tag"><span class="sw" style="background:var(--tr)"></span>Travel</div>
+      <div class="tag"><span class="sw" style="background:var(--dr)"></span>Driving</div>
       <div class="tag"><span class="sw" style="background:var(--off)"></span>Off</div>
     </div>
 
@@ -300,49 +277,12 @@
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS9dYykqhLDctkDUvYOrX5buK09uK1hHaryxnro6YiHltFPKyTCkd_ji_pWWdIPfy-XdlNB-XhTMv0-/pub?gid=0&single=true&output=csv";
 
 const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-const DEPT_RANK = { operations:1, warehouse:2, installation:3, turf:4, wellness:5 };
 
 let allRows = [];
 let selectedWeekStart = "";
 let lastEmployeeCount = 0;
 
-/* Department filter */
-let selectedDept = "all"; // all | operations | warehouse | installation | turf | wellness
-
-/* Fit-all-rows mode */
 const FIT_LIMIT = 19;
-
-/* AUTO-ROTATE (TV MODE) */
-const AUTO_ROTATE = true;
-const ROTATE_INTERVAL_MS = 30000; // 30 seconds
-const DEPT_ROTATE_ORDER = ["all","operations","warehouse","installation","turf","wellness"]; // OFF REMOVED
-let rotateTimer = null;
-let rotatePaused = false;
-
-function startDeptAutoRotate(){
-  if (!AUTO_ROTATE) return;
-  stopDeptAutoRotate();
-
-  rotateTimer = setInterval(() => {
-    if (rotatePaused) return;
-
-    const idx = DEPT_ROTATE_ORDER.indexOf(selectedDept);
-    const next = DEPT_ROTATE_ORDER[(idx + 1) % DEPT_ROTATE_ORDER.length];
-    selectedDept = next;
-    render();
-  }, ROTATE_INTERVAL_MS);
-}
-
-function stopDeptAutoRotate(){
-  if (rotateTimer){
-    clearInterval(rotateTimer);
-    rotateTimer = null;
-  }
-}
-
-function pauseRotation(){
-  rotatePaused = true;
-}
 
 function applySizingForRowH(rowH){
   const nameFS = Math.max(12, Math.min(22, Math.floor(rowH * 0.28)));
@@ -379,11 +319,9 @@ function applyAutoFitToViewport(numEmployees){
     const main = document.querySelector("main");
 
     const headerH = header ? header.getBoundingClientRect().height : 160;
-
     const ms = main ? getComputedStyle(main) : null;
     const padTop = ms ? parseFloat(ms.paddingTop) : 18;
     const padBottom = ms ? parseFloat(ms.paddingBottom) : 28;
-
     const available = window.innerHeight - headerH - padTop - padBottom;
 
     const thead = table ? table.querySelector("thead") : null;
@@ -391,9 +329,8 @@ function applyAutoFitToViewport(numEmployees){
     if (!tableHeaderH || tableHeaderH < 40) tableHeaderH = 64;
 
     let minRowH = 40;
-    const maxIterations = 20;
 
-    for (let i=0; i<maxIterations; i++){
+    for (let i=0; i<20; i++){
       const tbody = table ? table.querySelector("tbody") : null;
       const bodyH = tbody ? tbody.getBoundingClientRect().height : (rowH * numEmployees);
       const needed = tableHeaderH + bodyH;
@@ -414,11 +351,12 @@ window.addEventListener("resize", () => {
 function normalizeDept(d=""){
   d = d.toLowerCase().trim();
   if (!d) return "";
-  if (d.startsWith("op")) return "operations";
+  if (d.startsWith("op") || d.startsWith("office")) return "operations";
   if (d.startsWith("ware")) return "warehouse";
   if (d.startsWith("inst")) return "installation";
   if (d.startsWith("turf")) return "turf";
   if (d.startsWith("well")) return "wellness";
+  if (d.startsWith("driv")) return "driving";
   return d;
 }
 
@@ -443,21 +381,47 @@ function mondayOfThisWeekISO(){
 function parseCSV(text){
   const rows = [];
   let row = [], cur = "", inQ = false;
+
   for (let i=0; i<text.length; i++){
     const c = text[i], n = text[i+1];
-    if (c === '"' && inQ && n === '"'){ cur += '"'; i++; continue; }
-    if (c === '"'){ inQ = !inQ; continue; }
-    if (c === ',' && !inQ){ row.push(cur); cur = ""; continue; }
-    if ((c === '\n' || c === '\r') && !inQ){
-      if (cur.length || row.length){ row.push(cur); rows.push(row); }
-      row = []; cur = "";
+
+    if (c === '"' && inQ && n === '"'){
+      cur += '"';
+      i++;
       continue;
     }
+
+    if (c === '"'){
+      inQ = !inQ;
+      continue;
+    }
+
+    if (c === ',' && !inQ){
+      row.push(cur);
+      cur = "";
+      continue;
+    }
+
+    if ((c === '\n' || c === '\r') && !inQ){
+      if (cur.length || row.length){
+        row.push(cur);
+        rows.push(row);
+      }
+      row = [];
+      cur = "";
+      continue;
+    }
+
     cur += c;
   }
-  if (cur.length || row.length){ row.push(cur); rows.push(row); }
+
+  if (cur.length || row.length){
+    row.push(cur);
+    rows.push(row);
+  }
 
   const rawHeader = (rows.shift() || []).map(h => (h||"").trim().toLowerCase());
+
   const header = rawHeader.map(h => {
     if (h === "default department") return "default_department";
     if (h === "department") return "dept";
@@ -485,53 +449,58 @@ function normDay(x){
 function isOffRow(r){
   const dept = normalizeDept(r.dept || "");
   const task = ((r.task || "")).toLowerCase().trim();
-  return dept === "off" || task === "off" || task === "pto" || task === "pto" || task.startsWith("off ") || task.startsWith("pto ");
+
+  return dept === "off" ||
+         task === "off" ||
+         task === "pto" ||
+         task.startsWith("off ") ||
+         task.startsWith("pto ");
 }
 
 function isTravelRow(r){
   const dept = (r.dept || "").toLowerCase().trim();
   const text = ((r.task || "") + " " + (r.project || "")).toLowerCase();
+
   return dept.startsWith("trav") || text.includes("travel");
+}
+
+function isDrivingRow(r){
+  const dept = (r.dept || "").toLowerCase().trim();
+  const text = ((r.task || "") + " " + (r.project || "")).toLowerCase();
+
+  return dept.startsWith("driv") || text.includes("driving");
 }
 
 function getCellBg(r){
   if (isOffRow(r)) return "var(--off)";
+  if (isDrivingRow(r)) return "var(--dr)";
   if (isTravelRow(r)) return "var(--tr)";
 
   const d = normalizeDept(r.dept || "");
+
   if (d === "warehouse") return "var(--wh)";
   if (d === "installation") return "var(--in)";
   if (d === "turf") return "var(--tu)";
   if (d === "operations") return "var(--op)";
   if (d === "wellness") return "var(--we)";
+  if (d === "driving") return "var(--dr)";
+
   return "#ffffff";
-}
-
-function isEmployeeOffAllWeek(employeeRecordsByDay){
-  let anyDay = false;
-  let anyNonOff = false;
-
-  for (const d of DAYS){
-    const r = employeeRecordsByDay[d];
-    if (!r) continue;
-    anyDay = true;
-    if (!isOffRow(r)) anyNonOff = true;
-  }
-
-  if (anyDay && !anyNonOff) return true;
-  if (!anyDay) return true;
-  return false;
 }
 
 function buildTabs(weekStarts, selected, onSelect){
   const el = document.getElementById("tabs");
   el.innerHTML = "";
+
   if (weekStarts.length <= 1) return;
 
   const thisMon = mondayOfThisWeekISO();
   const idxThis = weekStarts.indexOf(thisMon);
 
-  const thisWeek = (idxThis !== -1) ? thisMon : (weekStarts[weekStarts.length - 2] || weekStarts[0]);
+  const thisWeek = (idxThis !== -1)
+    ? thisMon
+    : (weekStarts[weekStarts.length - 2] || weekStarts[0]);
+
   const nextWeek = (idxThis !== -1)
     ? (weekStarts[idxThis + 1] || weekStarts[weekStarts.length - 1])
     : (weekStarts[weekStarts.length - 1] || weekStarts[0]);
@@ -545,97 +514,47 @@ function buildTabs(weekStarts, selected, onSelect){
     const btn = document.createElement("button");
     btn.className = "tab" + (t.week_start === selected ? " active" : "");
     btn.textContent = t.label;
-    btn.onclick = () => {
-      pauseRotation();
-      onSelect(t.week_start);
-    };
-    el.appendChild(btn);
-  }
-}
-
-function deptLabel(d){
-  if (d === "all") return "All";
-  if (d === "operations") return "Office";
-  if (d === "warehouse") return "Warehouse";
-  if (d === "installation") return "Install";
-  if (d === "turf") return "Turf";
-  if (d === "wellness") return "Wellness";
-  return d;
-}
-
-function buildDeptTabs(selected, onSelect){
-  const el = document.getElementById("deptTabs");
-  if (!el) return;
-
-  const opts = ["all","operations","warehouse","installation","turf","wellness"]; // OFF REMOVED
-  el.innerHTML = "";
-
-  for (const d of opts){
-    const btn = document.createElement("button");
-    btn.className = "dept-pill" + (d === selected ? " active" : "");
-    btn.textContent = deptLabel(d);
-    btn.onclick = () => {
-      pauseRotation();
-      onSelect(d);
-    };
+    btn.onclick = () => onSelect(t.week_start);
     el.appendChild(btn);
   }
 }
 
 function buildBoard(records){
   const weekStart = (records[0]?.week_start) || "";
-  document.getElementById("weekLabel").textContent = weekStart ? `Week of ${weekStart}` : "";
+  document.getElementById("weekLabel").textContent =
+    weekStart ? `Week of ${weekStart}` : "";
 
   const today = getTodayAbbrev();
 
   const byEmployee = new Map();
+
   for (const r of records){
     if (!r.employee) continue;
-    if (!byEmployee.has(r.employee)) byEmployee.set(r.employee, []);
+
+    if (!byEmployee.has(r.employee)){
+      byEmployee.set(r.employee, []);
+    }
+
     byEmployee.get(r.employee).push(r);
   }
 
-  const employeeDefaultDept = {};
-  for (const [e, recs] of byEmployee.entries()){
-    const ddRaw = recs.find(x => (x.default_department || "").trim() !== "")?.default_department || "";
-    employeeDefaultDept[e] = normalizeDept(ddRaw);
+  const dayIndexByEmployee = new Map();
+
+  for (const e of byEmployee.keys()){
+    dayIndexByEmployee.set(e, {});
   }
 
-  const dayIndexByEmployee = new Map();
-  for (const e of byEmployee.keys()) dayIndexByEmployee.set(e, {});
   for (const r of records){
     const e = r.employee;
     if (!e) continue;
+
     const d = normDay(r.day);
     if (!DAYS.includes(d)) continue;
+
     dayIndexByEmployee.get(e)[d] = r;
   }
 
-  const employees = [...byEmployee.keys()];
-  const offAllWeekSet = new Set();
-  for (const e of employees){
-    const idx = dayIndexByEmployee.get(e) || {};
-    if (isEmployeeOffAllWeek(idx)) offAllWeekSet.add(e);
-  }
-
-  const active = employees.filter(e => !offAllWeekSet.has(e));
-  const offAll = employees.filter(e => offAllWeekSet.has(e));
-
-  active.sort((a,b)=>{
-    const da = employeeDefaultDept[a];
-    const db = employeeDefaultDept[b];
-    const ra = DEPT_RANK[da] ?? 9999;
-    const rb = DEPT_RANK[db] ?? 9999;
-    return (ra - rb) || a.localeCompare(b);
-  });
-
-  offAll.sort((a,b)=> a.localeCompare(b));
-
-  const sortedEmployees = [...active, ...offAll];
-
-  const deptFilteredEmployees = (selectedDept === "all")
-    ? sortedEmployees
-    : sortedEmployees.filter(e => (employeeDefaultDept[e] || "") === selectedDept);
+  const employees = [...byEmployee.keys()].sort((a,b)=>a.localeCompare(b));
 
   const table = document.getElementById("board");
   table.innerHTML = "";
@@ -651,7 +570,11 @@ function buildBoard(records){
   for (const d of DAYS){
     const th = document.createElement("th");
     th.textContent = d.toUpperCase();
-    if (d === today) th.classList.add("today");
+
+    if (d === today){
+      th.classList.add("today");
+    }
+
     hr.appendChild(th);
   }
 
@@ -660,7 +583,7 @@ function buildBoard(records){
 
   const tbody = document.createElement("tbody");
 
-  for (const e of deptFilteredEmployees){
+  for (const e of employees){
     const tr = document.createElement("tr");
 
     const th = document.createElement("th");
@@ -671,9 +594,13 @@ function buildBoard(records){
 
     for (const d of DAYS){
       const td = document.createElement("td");
-      if (d === today) td.classList.add("today");
+
+      if (d === today){
+        td.classList.add("today");
+      }
 
       const r = perDay[d];
+
       if (r){
         const off = isOffRow(r);
         const bg = getCellBg(r);
@@ -681,7 +608,10 @@ function buildBoard(records){
         const taskTxt = (r.task || "").trim();
         const projTxt = (r.project || "").trim();
 
-        const big = off ? (taskTxt.toUpperCase().startsWith("PTO") ? "PTO" : "OFF") : (taskTxt || projTxt);
+        const big = off
+          ? (taskTxt.toUpperCase().startsWith("PTO") ? "PTO" : "OFF")
+          : (taskTxt || projTxt);
+
         const small = off ? "" : (projTxt || "");
 
         td.innerHTML = `
@@ -700,14 +630,17 @@ function buildBoard(records){
 
   table.appendChild(tbody);
 
-  requestAnimationFrame(() => applyAutoFitToViewport(deptFilteredEmployees.length));
+  requestAnimationFrame(() => applyAutoFitToViewport(employees.length));
 }
 
 function render(){
   const weekStarts = [...new Set(allRows.map(r => r.week_start).filter(Boolean))].sort();
+
   if (!selectedWeekStart){
     const thisMon = mondayOfThisWeekISO();
-    selectedWeekStart = weekStarts.includes(thisMon) ? thisMon : (weekStarts[weekStarts.length - 1] || "");
+    selectedWeekStart = weekStarts.includes(thisMon)
+      ? thisMon
+      : (weekStarts[weekStarts.length - 1] || "");
   }
 
   buildTabs(weekStarts, selectedWeekStart, (ws) => {
@@ -715,28 +648,23 @@ function render(){
     render();
   });
 
-  buildDeptTabs(selectedDept, (d) => {
-    selectedDept = d;
-    render();
-  });
+  const filtered = selectedWeekStart
+    ? allRows.filter(r => r.week_start === selectedWeekStart)
+    : allRows;
 
-  const filtered = selectedWeekStart ? allRows.filter(r => r.week_start === selectedWeekStart) : allRows;
   buildBoard(filtered);
 }
-
-/* Pause rotation on ANY click anywhere on the page */
-document.addEventListener("click", () => pauseRotation(), { passive:true });
 
 async function init(){
   const res = await fetch(CSV_URL, {cache:"no-store"});
   const text = await res.text();
-  allRows = parseCSV(text);
 
+  allRows = parseCSV(text);
   render();
-  startDeptAutoRotate();
 
   setTimeout(init, 120000);
 }
+
 init();
 </script>
 </body>
