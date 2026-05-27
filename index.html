@@ -144,7 +144,7 @@
 
     .board thead th{
       background:var(--panel);
-      padding:14px 10px;
+      padding:10px 10px;
       font-size:20px;
       border-bottom:2px solid var(--grid);
       text-align:center;
@@ -152,6 +152,24 @@
       position:sticky;
       top:0;
       z-index:5;
+    }
+
+    .date-label{
+      font-size:14px;
+      color:#6b7280;
+      font-weight:700;
+      line-height:1.1;
+      margin-bottom:3px;
+    }
+
+    .day-label{
+      font-size:20px;
+      font-weight:900;
+      line-height:1.1;
+    }
+
+    .board thead th.today .date-label{
+      color:#d1d5db;
     }
 
     .board th.employee{
@@ -278,6 +296,10 @@ const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS9dYykqhLDctkD
 
 const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 
+const AUTO_CYCLE_WEEKS = true;
+const CYCLE_SECONDS = 20;
+let cycleTimer = null;
+
 let allRows = [];
 let selectedWeekStart = "";
 let lastEmployeeCount = 0;
@@ -378,6 +400,18 @@ function mondayOfThisWeekISO(){
   return `${y}-${m}-${da}`;
 }
 
+function getDateForDay(weekStart, offset){
+  if (!weekStart) return "";
+
+  const parts = weekStart.split("-");
+  if (parts.length !== 3) return "";
+
+  const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  d.setDate(d.getDate() + offset);
+
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
 function parseCSV(text){
   const rows = [];
   let row = [], cur = "", inQ = false;
@@ -425,8 +459,9 @@ function parseCSV(text){
   const header = rawHeader.map(h => {
     if (h === "default department") return "default_department";
     if (h === "department") return "dept";
-    if (h === "sort order") return "sort_order";
+    if (h === "person" || h === "employee") return "employee";
     if (h === "week" || h === "week of") return "week_start";
+    if (h === "sort order" || h === "sort_order") return "sort_order";
     return h.replace(/\s+/g, "_");
   });
 
@@ -499,11 +534,11 @@ function buildTabs(weekStarts, selected, onSelect){
 
   const thisWeek = (idxThis !== -1)
     ? thisMon
-    : (weekStarts[weekStarts.length - 2] || weekStarts[0]);
+    : (weekStarts[0] || "");
 
   const nextWeek = (idxThis !== -1)
     ? (weekStarts[idxThis + 1] || weekStarts[weekStarts.length - 1])
-    : (weekStarts[weekStarts.length - 1] || weekStarts[0]);
+    : (weekStarts[1] || weekStarts[0]);
 
   const tabDefs = [
     {label:"This Week", week_start:thisWeek},
@@ -514,13 +549,33 @@ function buildTabs(weekStarts, selected, onSelect){
     const btn = document.createElement("button");
     btn.className = "tab" + (t.week_start === selected ? " active" : "");
     btn.textContent = t.label;
-    btn.onclick = () => onSelect(t.week_start);
+    btn.onclick = () => {
+      selectedWeekStart = t.week_start;
+      render();
+    };
     el.appendChild(btn);
   }
 }
 
+function setupAutoCycle(weekStarts){
+  if (cycleTimer) clearInterval(cycleTimer);
+
+  if (!AUTO_CYCLE_WEEKS || weekStarts.length < 2) return;
+
+  cycleTimer = setInterval(() => {
+    const currentIndex = weekStarts.indexOf(selectedWeekStart);
+    const nextIndex = currentIndex === -1
+      ? 0
+      : (currentIndex + 1) % weekStarts.length;
+
+    selectedWeekStart = weekStarts[nextIndex];
+    render();
+  }, CYCLE_SECONDS * 1000);
+}
+
 function buildBoard(records){
   const weekStart = (records[0]?.week_start) || "";
+
   document.getElementById("weekLabel").textContent =
     weekStart ? `Week of ${weekStart}` : "";
 
@@ -554,18 +609,17 @@ function buildBoard(records){
     dayIndexByEmployee.get(e)[d] = r;
   }
 
- const employeeSort = {};
+  const employeeSort = {};
 
-for (const [e, recs] of byEmployee.entries()){
-  const sortVal = parseInt(recs[0]?.sort_order || "9999", 10);
-  employeeSort[e] = isNaN(sortVal) ? 9999 : sortVal;
-}
+  for (const [e, recs] of byEmployee.entries()){
+    const raw = recs.find(r => (r.sort_order || "").trim() !== "")?.sort_order || "9999";
+    const sortVal = Number(raw);
+    employeeSort[e] = Number.isFinite(sortVal) ? sortVal : 9999;
+  }
 
-const employees = [...byEmployee.keys()].sort((a,b)=>{
-  return (
-    employeeSort[a] - employeeSort[b]
-  ) || a.localeCompare(b);
-});
+  const employees = [...byEmployee.keys()].sort((a,b)=>{
+    return (employeeSort[a] - employeeSort[b]) || a.localeCompare(b);
+  });
 
   const table = document.getElementById("board");
   table.innerHTML = "";
@@ -578,9 +632,16 @@ const employees = [...byEmployee.keys()].sort((a,b)=>{
   th0.textContent = "EMPLOYEE";
   hr.appendChild(th0);
 
-  for (const d of DAYS){
+  for (let i = 0; i < DAYS.length; i++){
+    const d = DAYS[i];
     const th = document.createElement("th");
-    th.textContent = d.toUpperCase();
+
+    const dateLabel = getDateForDay(weekStart, i);
+
+    th.innerHTML = `
+      <div class="date-label">${dateLabel}</div>
+      <div class="day-label">${d.toUpperCase()}</div>
+    `;
 
     if (d === today){
       th.classList.add("today");
@@ -651,19 +712,18 @@ function render(){
     const thisMon = mondayOfThisWeekISO();
     selectedWeekStart = weekStarts.includes(thisMon)
       ? thisMon
-      : (weekStarts[weekStarts.length - 1] || "");
+      : (weekStarts[0] || "");
   }
 
-  buildTabs(weekStarts, selectedWeekStart, (ws) => {
-    selectedWeekStart = ws;
-    render();
-  });
+  buildTabs(weekStarts, selectedWeekStart);
 
   const filtered = selectedWeekStart
     ? allRows.filter(r => r.week_start === selectedWeekStart)
     : allRows;
 
   buildBoard(filtered);
+
+  setupAutoCycle(weekStarts);
 }
 
 async function init(){
