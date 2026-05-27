@@ -35,14 +35,8 @@
       --cellInset:2px;
     }
 
-    *{
-      box-sizing:border-box;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
-    }
-
-    html,body{
-      height:100%;
-    }
+    *{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;}
+    html,body{height:100%;}
 
     body{
       margin:0;
@@ -73,16 +67,8 @@
       flex:1 1 auto;
     }
 
-    h1{
-      margin:0;
-      font-size:32px;
-      letter-spacing:.3px;
-    }
-
-    .sub{
-      font-size:18px;
-      color:var(--muted);
-    }
+    h1{margin:0;font-size:32px;letter-spacing:.3px;}
+    .sub{font-size:18px;color:var(--muted);}
 
     .tabs{
       display:flex;
@@ -127,12 +113,7 @@
       max-width:620px;
     }
 
-    .tag{
-      display:flex;
-      align-items:center;
-      gap:6px;
-    }
-
+    .tag{display:flex;align-items:center;gap:6px;}
     .sw{
       width:16px;
       height:11px;
@@ -148,9 +129,7 @@
       flex:0 0 auto;
     }
 
-    main{
-      padding:18px 22px 28px;
-    }
+    main{padding:18px 22px 28px;}
 
     .board{
       width:100%;
@@ -282,7 +261,6 @@
 </head>
 
 <body>
-
 <header>
   <div class="header-left">
     <div>
@@ -294,7 +272,7 @@
   </div>
 
   <div class="header-right">
-    <div class="legend">
+    <div class="legend" aria-label="Color legend">
       <div class="tag"><span class="sw" style="background:var(--op)"></span>Office</div>
       <div class="tag"><span class="sw" style="background:var(--wh)"></span>Warehouse</div>
       <div class="tag"><span class="sw" style="background:var(--in)"></span>Install</div>
@@ -314,132 +292,218 @@
 </main>
 
 <script>
-const CSV_URL = "YOUR_CSV_URL_HERE";
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS9dYykqhLDctkDUvYOrX5buK09uK1hHaryxnro6YiHltFPKyTCkd_ji_pWWdIPfy-XdlNB-XhTMv0-/pub?gid=0&single=true&output=csv";
 
 const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 
 const AUTO_CYCLE_WEEKS = true;
 const CYCLE_SECONDS = 20;
-
 let cycleTimer = null;
+
 let allRows = [];
 let selectedWeekStart = "";
+let lastEmployeeCount = 0;
 
-function mondayOfThisWeekISO(){
-  const d = new Date();
-  const day = d.getDay();
-  const diff = (day === 0 ? -6 : 1 - day);
+const FIT_LIMIT = 19;
 
-  d.setDate(d.getDate() + diff);
+function applySizingForRowH(rowH){
+  const nameFS = Math.max(12, Math.min(22, Math.floor(rowH * 0.28)));
+  const taskFS = Math.max(14, Math.min(24, Math.floor(rowH * 0.34)));
+  const projFS = Math.max(11, Math.min(18, Math.floor(rowH * 0.24)));
 
-  const y = d.getFullYear();
-  const m = String(d.getMonth()+1).padStart(2,"0");
-  const da = String(d.getDate()).padStart(2,"0");
+  const cellPadY = Math.max(5, Math.min(10, Math.floor(rowH * 0.12)));
+  const cellPadX = Math.max(7, Math.min(12, Math.floor(rowH * 0.15)));
+  const cellGap  = Math.max(3, Math.min(6, Math.floor(rowH * 0.06)));
 
-  return `${y}-${m}-${da}`;
+  const empColW = Math.max(175, Math.min(255, Math.floor(window.innerWidth * 0.13)));
+
+  const root = document.documentElement.style;
+  root.setProperty("--rowH", `${rowH}px`);
+  root.setProperty("--nameFS", `${nameFS}px`);
+  root.setProperty("--taskFS", `${taskFS}px`);
+  root.setProperty("--projFS", `${projFS}px`);
+  root.setProperty("--cellPadY", `${cellPadY}px`);
+  root.setProperty("--cellPadX", `${cellPadX}px`);
+  root.setProperty("--cellGap", `${cellGap}px`);
+  root.setProperty("--empColW", `${empColW}px`);
 }
 
-function normalizeWeekStartISO(weekStart){
-  let d;
+function applyAutoFitToViewport(numEmployees){
+  lastEmployeeCount = numEmployees;
 
-  if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(weekStart)) {
-    const parts = weekStart.split("-");
-    d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  let rowH = Math.floor((window.innerHeight * 0.62) / Math.max(numEmployees, 1));
+  rowH = Math.max(44, Math.min(92, rowH));
+  applySizingForRowH(rowH);
+
+  if (numEmployees <= FIT_LIMIT){
+    const header = document.querySelector("header");
+    const table = document.getElementById("board");
+    const main = document.querySelector("main");
+
+    const headerH = header ? header.getBoundingClientRect().height : 160;
+    const ms = main ? getComputedStyle(main) : null;
+    const padTop = ms ? parseFloat(ms.paddingTop) : 18;
+    const padBottom = ms ? parseFloat(ms.paddingBottom) : 28;
+    const available = window.innerHeight - headerH - padTop - padBottom;
+
+    const thead = table ? table.querySelector("thead") : null;
+    let tableHeaderH = thead ? thead.getBoundingClientRect().height : 64;
+    if (!tableHeaderH || tableHeaderH < 40) tableHeaderH = 64;
+
+    let minRowH = 40;
+
+    for (let i=0; i<20; i++){
+      const tbody = table ? table.querySelector("tbody") : null;
+      const bodyH = tbody ? tbody.getBoundingClientRect().height : (rowH * numEmployees);
+      const needed = tableHeaderH + bodyH;
+
+      if (needed <= available) break;
+
+      rowH -= 2;
+      if (rowH < minRowH) break;
+      applySizingForRowH(rowH);
+    }
   }
-  else if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(weekStart)) {
-    const parts = weekStart.split("/");
-    d = new Date(Number(parts[2]), Number(parts[0]) - 1, Number(parts[1]));
-  }
-  else {
-    d = new Date(weekStart);
-  }
-
-  if (isNaN(d.getTime())) return "";
-
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-
-  return `${y}-${m}-${day}`;
 }
 
-function isDisplayedWeekCurrentWeek(weekStart){
-  if (!weekStart) return false;
-
-  const thisMonday = mondayOfThisWeekISO();
-  const displayedMonday = normalizeWeekStartISO(weekStart);
-
-  return displayedMonday === thisMonday;
-}
-
-function getTodayAbbrev(){
-  return ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][new Date().getDay()];
-}
-
-function getDateForDay(weekStart, offset){
-  if (!weekStart) return "";
-
-  let d;
-
-  if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(weekStart)) {
-    const parts = weekStart.split("-");
-    d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-  }
-  else if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(weekStart)) {
-    const parts = weekStart.split("/");
-    d = new Date(Number(parts[2]), Number(parts[0]) - 1, Number(parts[1]));
-  }
-  else {
-    d = new Date(weekStart);
-  }
-
-  if (isNaN(d.getTime())) return "";
-
-  d.setDate(d.getDate() + offset);
-
-  return `${d.getMonth()+1}/${d.getDate()}`;
-}
-
-function parseCSV(text){
-  const rows = text.trim().split("\n").map(r => r.split(","));
-
-  const header = rows.shift().map(h => h.trim().toLowerCase());
-
-  return rows.map(r => {
-    const obj = {};
-    header.forEach((h,i) => obj[h] = (r[i] || "").trim());
-    return obj;
-  });
-}
-
-function normDay(x){
-  return (x || "").slice(0,3);
-}
+window.addEventListener("resize", () => {
+  if (lastEmployeeCount) requestAnimationFrame(() => applyAutoFitToViewport(lastEmployeeCount));
+});
 
 function normalizeDept(d=""){
-  d = d.toLowerCase();
-
-  if (d.startsWith("op")) return "operations";
+  d = d.toLowerCase().trim();
+  if (!d) return "";
+  if (d.startsWith("op") || d.startsWith("office")) return "operations";
   if (d.startsWith("ware")) return "warehouse";
   if (d.startsWith("inst")) return "installation";
   if (d.startsWith("turf")) return "turf";
   if (d.startsWith("well")) return "wellness";
   if (d.startsWith("driv")) return "driving";
-
   return d;
 }
 
+function getTodayAbbrev(){
+  const map = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  return map[new Date().getDay()];
+}
+
+function mondayOfThisWeekISO(){
+  const d = new Date();
+  const day = d.getDay();
+  const diff = (day === 0 ? -6 : 1 - day);
+  const monday = new Date(d);
+  monday.setDate(d.getDate() + diff);
+  monday.setHours(0,0,0,0);
+  const y = monday.getFullYear();
+  const m = String(monday.getMonth()+1).padStart(2,"0");
+  const da = String(monday.getDate()).padStart(2,"0");
+  return `${y}-${m}-${da}`;
+}
+
+function getDateForDay(weekStart, offset){
+  if (!weekStart) return "";
+
+  const parts = weekStart.split("-");
+  if (parts.length !== 3) return "";
+
+  const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  d.setDate(d.getDate() + offset);
+
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+function parseCSV(text){
+  const rows = [];
+  let row = [], cur = "", inQ = false;
+
+  for (let i=0; i<text.length; i++){
+    const c = text[i], n = text[i+1];
+
+    if (c === '"' && inQ && n === '"'){
+      cur += '"';
+      i++;
+      continue;
+    }
+
+    if (c === '"'){
+      inQ = !inQ;
+      continue;
+    }
+
+    if (c === ',' && !inQ){
+      row.push(cur);
+      cur = "";
+      continue;
+    }
+
+    if ((c === '\n' || c === '\r') && !inQ){
+      if (cur.length || row.length){
+        row.push(cur);
+        rows.push(row);
+      }
+      row = [];
+      cur = "";
+      continue;
+    }
+
+    cur += c;
+  }
+
+  if (cur.length || row.length){
+    row.push(cur);
+    rows.push(row);
+  }
+
+  const rawHeader = (rows.shift() || []).map(h => (h||"").trim().toLowerCase());
+
+  const header = rawHeader.map(h => {
+    if (h === "default department") return "default_department";
+    if (h === "department") return "dept";
+    if (h === "person" || h === "employee") return "employee";
+    if (h === "week" || h === "week of") return "week_start";
+    if (h === "sort order" || h === "sort_order") return "sort_order";
+    return h.replace(/\s+/g, "_");
+  });
+
+  return rows
+    .filter(r => r.some(x => (x||"").trim() !== ""))
+    .map(r => {
+      const obj = {};
+      header.forEach((h,idx) => obj[h] = (r[idx]||"").trim());
+      return obj;
+    });
+}
+
+function normDay(x){
+  const s = (x||"").trim();
+  const d3 = s.slice(0,3).toLowerCase();
+  if (!d3) return "";
+  return d3.charAt(0).toUpperCase() + d3.slice(1);
+}
+
 function isOffRow(r){
-  const task = (r.task || "").toLowerCase();
-  return task.includes("off") || task.includes("pto");
+  const dept = normalizeDept(r.dept || "");
+  const task = ((r.task || "")).toLowerCase().trim();
+
+  return dept === "off" ||
+         task === "off" ||
+         task === "pto" ||
+         task.startsWith("off ") ||
+         task.startsWith("pto ");
 }
 
 function isTravelRow(r){
-  return (r.dept || "").toLowerCase().includes("travel");
+  const dept = (r.dept || "").toLowerCase().trim();
+  const text = ((r.task || "") + " " + (r.project || "")).toLowerCase();
+
+  return dept.startsWith("trav") || text.includes("travel");
 }
 
 function isDrivingRow(r){
-  return (r.dept || "").toLowerCase().includes("driv");
+  const dept = (r.dept || "").toLowerCase().trim();
+  const text = ((r.task || "") + " " + (r.project || "")).toLowerCase();
+
+  return dept.startsWith("driv") || text.includes("driving");
 }
 
 function getCellBg(r){
@@ -454,29 +518,43 @@ function getCellBg(r){
   if (d === "turf") return "var(--tu)";
   if (d === "operations") return "var(--op)";
   if (d === "wellness") return "var(--we)";
+  if (d === "driving") return "var(--dr)";
 
   return "#ffffff";
 }
 
-function buildTabs(weekStarts){
+function buildTabs(weekStarts, selected, onSelect){
   const el = document.getElementById("tabs");
   el.innerHTML = "";
 
   if (weekStarts.length <= 1) return;
 
-  weekStarts.forEach((ws, i) => {
+  const thisMon = mondayOfThisWeekISO();
+  const idxThis = weekStarts.indexOf(thisMon);
+
+  const thisWeek = (idxThis !== -1)
+    ? thisMon
+    : (weekStarts[0] || "");
+
+  const nextWeek = (idxThis !== -1)
+    ? (weekStarts[idxThis + 1] || weekStarts[weekStarts.length - 1])
+    : (weekStarts[1] || weekStarts[0]);
+
+  const tabDefs = [
+    {label:"This Week", week_start:thisWeek},
+    {label:"Next Week", week_start:nextWeek}
+  ].filter((t, i, arr) => t.week_start && arr.findIndex(x => x.week_start === t.week_start) === i);
+
+  for (const t of tabDefs){
     const btn = document.createElement("button");
-
-    btn.className = "tab" + (ws === selectedWeekStart ? " active" : "");
-    btn.textContent = i === 0 ? "This Week" : "Next Week";
-
+    btn.className = "tab" + (t.week_start === selected ? " active" : "");
+    btn.textContent = t.label;
     btn.onclick = () => {
-      selectedWeekStart = ws;
+      selectedWeekStart = t.week_start;
       render();
     };
-
     el.appendChild(btn);
-  });
+  }
 }
 
 function setupAutoCycle(weekStarts){
@@ -486,41 +564,60 @@ function setupAutoCycle(weekStarts){
 
   cycleTimer = setInterval(() => {
     const currentIndex = weekStarts.indexOf(selectedWeekStart);
-
     const nextIndex = currentIndex === -1
       ? 0
       : (currentIndex + 1) % weekStarts.length;
 
     selectedWeekStart = weekStarts[nextIndex];
-
     render();
   }, CYCLE_SECONDS * 1000);
 }
 
 function buildBoard(records){
-  const weekStart = records[0]?.week_start || "";
+  const weekStart = (records[0]?.week_start) || "";
 
   document.getElementById("weekLabel").textContent =
     weekStart ? `Week of ${weekStart}` : "";
 
   const today = getTodayAbbrev();
-  const shouldHighlightToday = isDisplayedWeekCurrentWeek(weekStart);
 
-  const byEmployee = {};
+  const byEmployee = new Map();
 
-  records.forEach(r => {
-    if (!byEmployee[r.employee]) byEmployee[r.employee] = {};
-    byEmployee[r.employee][normDay(r.day)] = r;
-  });
+  for (const r of records){
+    if (!r.employee) continue;
+
+    if (!byEmployee.has(r.employee)){
+      byEmployee.set(r.employee, []);
+    }
+
+    byEmployee.get(r.employee).push(r);
+  }
+
+  const dayIndexByEmployee = new Map();
+
+  for (const e of byEmployee.keys()){
+    dayIndexByEmployee.set(e, {});
+  }
+
+  for (const r of records){
+    const e = r.employee;
+    if (!e) continue;
+
+    const d = normDay(r.day);
+    if (!DAYS.includes(d)) continue;
+
+    dayIndexByEmployee.get(e)[d] = r;
+  }
 
   const employeeSort = {};
 
-  Object.keys(byEmployee).forEach(e => {
-    const row = records.find(r => r.employee === e);
-    employeeSort[e] = Number(row?.sort_order || 9999);
-  });
+  for (const [e, recs] of byEmployee.entries()){
+    const raw = recs.find(r => (r.sort_order || "").trim() !== "")?.sort_order || "9999";
+    const sortVal = Number(raw);
+    employeeSort[e] = Number.isFinite(sortVal) ? sortVal : 9999;
+  }
 
-  const employees = Object.keys(byEmployee).sort((a,b)=>{
+  const employees = [...byEmployee.keys()].sort((a,b)=>{
     return (employeeSort[a] - employeeSort[b]) || a.localeCompare(b);
   });
 
@@ -535,17 +632,18 @@ function buildBoard(records){
   th0.textContent = "EMPLOYEE";
   hr.appendChild(th0);
 
-  for (let i=0; i<DAYS.length; i++){
+  for (let i = 0; i < DAYS.length; i++){
     const d = DAYS[i];
-
     const th = document.createElement("th");
 
+    const dateLabel = getDateForDay(weekStart, i);
+
     th.innerHTML = `
-      <div class="date-label">${getDateForDay(weekStart, i)}</div>
+      <div class="date-label">${dateLabel}</div>
       <div class="day-label">${d.toUpperCase()}</div>
     `;
 
-    if (shouldHighlightToday && d === today){
+    if (d === today){
       th.classList.add("today");
     }
 
@@ -557,54 +655,71 @@ function buildBoard(records){
 
   const tbody = document.createElement("tbody");
 
-  employees.forEach(e => {
+  for (const e of employees){
     const tr = document.createElement("tr");
 
     const th = document.createElement("th");
     th.textContent = e.toUpperCase();
-
     tr.appendChild(th);
 
-    DAYS.forEach(d => {
+    const perDay = dayIndexByEmployee.get(e) || {};
+
+    for (const d of DAYS){
       const td = document.createElement("td");
 
-      if (shouldHighlightToday && d === today){
+      if (d === today){
         td.classList.add("today");
       }
 
-      const r = byEmployee[e][d];
+      const r = perDay[d];
 
       if (r){
-        const bg = getCellBg(r);
         const off = isOffRow(r);
+        const bg = getCellBg(r);
+
+        const taskTxt = (r.task || "").trim();
+        const projTxt = (r.project || "").trim();
+
+        const big = off
+          ? (taskTxt.toUpperCase().startsWith("PTO") ? "PTO" : "OFF")
+          : (taskTxt || projTxt);
+
+        const small = off ? "" : (projTxt || "");
 
         td.innerHTML = `
           <div class="cell ${off ? "off" : ""}" style="background:${bg}">
-            <div class="big">${r.task || ""}</div>
-            <div class="small">${r.project || ""}</div>
+            <div class="big">${big || ""}</div>
+            ${small ? `<div class="small">${small}</div>` : ``}
           </div>
         `;
       }
 
       tr.appendChild(td);
-    });
+    }
 
     tbody.appendChild(tr);
-  });
+  }
 
   table.appendChild(tbody);
+
+  requestAnimationFrame(() => applyAutoFitToViewport(employees.length));
 }
 
 function render(){
-  const weekStarts = [...new Set(allRows.map(r => r.week_start))].sort();
+  const weekStarts = [...new Set(allRows.map(r => r.week_start).filter(Boolean))].sort();
 
   if (!selectedWeekStart){
-    selectedWeekStart = weekStarts[0];
+    const thisMon = mondayOfThisWeekISO();
+    selectedWeekStart = weekStarts.includes(thisMon)
+      ? thisMon
+      : (weekStarts[0] || "");
   }
 
-  buildTabs(weekStarts);
+  buildTabs(weekStarts, selectedWeekStart);
 
-  const filtered = allRows.filter(r => r.week_start === selectedWeekStart);
+  const filtered = selectedWeekStart
+    ? allRows.filter(r => r.week_start === selectedWeekStart)
+    : allRows;
 
   buildBoard(filtered);
 
@@ -612,18 +727,16 @@ function render(){
 }
 
 async function init(){
-  const res = await fetch(CSV_URL,{cache:"no-store"});
+  const res = await fetch(CSV_URL, {cache:"no-store"});
   const text = await res.text();
 
   allRows = parseCSV(text);
-
   render();
 
-  setTimeout(init,120000);
+  setTimeout(init, 120000);
 }
 
 init();
 </script>
-
 </body>
 </html>
