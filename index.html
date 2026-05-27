@@ -425,7 +425,7 @@ function parseCSV(text){
   const header = rawHeader.map(h => {
     if (h === "default department") return "default_department";
     if (h === "department") return "dept";
-    if (h === "person" || h === "employee") return "employee";
+    if (h === "sort order") return "sort_order";
     if (h === "week" || h === "week of") return "week_start";
     return h.replace(/\s+/g, "_");
   });
@@ -554,7 +554,18 @@ function buildBoard(records){
     dayIndexByEmployee.get(e)[d] = r;
   }
 
-  const employees = [...byEmployee.keys()].sort((a,b)=>a.localeCompare(b));
+ const employeeSort = {};
+
+for (const [e, recs] of byEmployee.entries()){
+  const sortVal = parseInt(recs[0]?.sort_order || "9999", 10);
+  employeeSort[e] = isNaN(sortVal) ? 9999 : sortVal;
+}
+
+const employees = [...byEmployee.keys()].sort((a,b)=>{
+  return (
+    employeeSort[a] - employeeSort[b]
+  ) || a.localeCompare(b);
+});
 
   const table = document.getElementById("board");
   table.innerHTML = "";
