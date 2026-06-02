@@ -865,20 +865,17 @@ function buildProjectsBoard(){
       ];
 
       values.forEach((v, i) => {
-        const td = document.createElement("td");
-        td.innerHTML = `
-          <div class="cell" style="background:#f8fafc">
-            <div class="${i === 0 ? "big" : "small"}">${v}</div>
-          </div>
-        `;
-        tr.appendChild(td);
-      });
+  const td = document.createElement("td");
+  const cellClass = getProjectCellClass(headers[i], v);
 
-      tbody.appendChild(tr);
-    });
+  td.innerHTML = `
+    <div class="cell ${cellClass}" style="background:#f8fafc">
+      <div class="${i === 0 ? "big" : "small"}">${v}</div>
+    </div>
+  `;
 
-  table.appendChild(tbody);
-}
+  tr.appendChild(td);
+});
 
 function render(){
   const weekStarts = [...new Set(allRows.map(r => r.week_start).filter(Boolean))].sort();
@@ -921,6 +918,66 @@ async function init(){
   render();
 
   setTimeout(init,120000);
+}
+
+  .project-board td,
+.project-board th{
+  text-align:center;
+}
+
+.project-board .cell{
+  align-items:center;
+  text-align:center;
+}
+
+.model-pro{
+  background:#bbf7d0 !important;
+}
+
+.model-park{
+  background:#e5e7eb !important;
+}
+
+.team-usp{
+  background:#fde68a !important;
+}
+
+.team-fsp{
+  background:#1e3a8a !important;
+  color:#ffffff;
+}
+
+.team-fsp .big,
+.team-fsp .small{
+  color:#ffffff;
+}
+
+.team-gc{
+  background:#111827 !important;
+  color:#ffffff;
+}
+
+.team-gc .big,
+.team-gc .small{
+  color:#ffffff;
+}
+
+  function getProjectCellClass(header, value){
+  const h = (header || "").toLowerCase().trim();
+  const v = (value || "").toLowerCase().trim();
+
+  if (h === "model"){
+    if (v === "pro") return "model-pro";
+    if (v === "park") return "model-park";
+  }
+
+  if (h === "install team"){
+    if (v === "usp") return "team-usp";
+    if (v === "fsp") return "team-fsp";
+    if (v === "gc") return "team-gc";
+  }
+
+  return "";
 }
 
 init();
