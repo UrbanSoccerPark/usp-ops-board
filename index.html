@@ -523,29 +523,27 @@ function getCellBg(r){
   return "#ffffff";
 }
 
-function buildTabs(weekStarts, selected, onSelect){
+function buildTabs(weekStarts){
   const el = document.getElementById("tabs");
   el.innerHTML = "";
 
   if (weekStarts.length <= 1) return;
 
-  const thisMon = mondayOfThisWeekISO();
-  const idxThis = weekStarts.indexOf(thisMon);
+  const labels = ["This Week", "Next Week", "2 Weeks Out", "3 Weeks Out"];
 
-  const thisWeek = (idxThis !== -1)
-    ? thisMon
-    : (weekStarts[0] || "");
+  weekStarts.forEach((ws, i) => {
+    const btn = document.createElement("button");
+    btn.className = "tab" + (ws === selectedWeekStart ? " active" : "");
+    btn.textContent = labels[i] || `Week ${i + 1}`;
 
-  const nextWeek = (idxThis !== -1)
-    ? (weekStarts[idxThis + 1] || weekStarts[weekStarts.length - 1])
-    : (weekStarts[1] || weekStarts[0]);
+    btn.onclick = () => {
+      selectedWeekStart = ws;
+      render();
+    };
 
-const labels = ["This Week", "Next Week", "2 Weeks Out", "3 Weeks Out"];
-
-const tabDefs = weekStarts.map((ws, i) => ({
-  label: labels[i] || `Week ${i + 1}`,
-  week_start: ws
-}));
+    el.appendChild(btn);
+  });
+}
 
   for (const t of tabDefs){
     const btn = document.createElement("button");
