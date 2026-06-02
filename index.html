@@ -276,7 +276,6 @@
       <div class="tag"><span class="sw" style="background:var(--op)"></span>Office</div>
       <div class="tag"><span class="sw" style="background:var(--wh)"></span>Warehouse</div>
       <div class="tag"><span class="sw" style="background:var(--in)"></span>Install</div>
-      <div class="tag"><span class="sw" style="background:var(--tu)"></span>Turf</div>
       <div class="tag"><span class="sw" style="background:var(--we)"></span>Wellness</div>
       <div class="tag"><span class="sw" style="background:var(--tr)"></span>Travel</div>
       <div class="tag"><span class="sw" style="background:var(--dr)"></span>Driving</div>
@@ -376,7 +375,6 @@ function normalizeDept(d=""){
   if (d.startsWith("op") || d.startsWith("office")) return "operations";
   if (d.startsWith("ware")) return "warehouse";
   if (d.startsWith("inst")) return "installation";
-  if (d.startsWith("turf")) return "turf";
   if (d.startsWith("well")) return "wellness";
   if (d.startsWith("driv")) return "driving";
   return d;
@@ -515,7 +513,6 @@ function getCellBg(r){
 
   if (d === "warehouse") return "var(--wh)";
   if (d === "installation") return "var(--in)";
-  if (d === "turf") return "var(--tu)";
   if (d === "operations") return "var(--op)";
   if (d === "wellness") return "var(--we)";
   if (d === "driving") return "var(--dr)";
