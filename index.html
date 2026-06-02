@@ -168,6 +168,11 @@
       line-height:1.1;
     }
 
+    .board thead th.today{
+      background:#111827;
+      color:#ffffff;
+    }
+
     .board thead th.today .date-label{
       color:#d1d5db;
     }
@@ -233,11 +238,6 @@
       opacity:.82;
     }
 
-    .board thead th.today{
-      background:#111827;
-      color:#ffffff;
-    }
-
     .board td.today{
       background:#fef3c7;
     }
@@ -257,6 +257,22 @@
     .cell.off .small{
       color:rgba(17,24,39,.72);
     }
+
+    .project-board th,
+    .project-board td{
+      height:72px;
+    }
+
+    .project-board .big{
+      font-size:22px;
+      -webkit-line-clamp:1;
+    }
+
+    .project-board .small{
+      font-size:18px;
+      -webkit-line-clamp:1;
+      opacity:.95;
+    }
   </style>
 </head>
 
@@ -265,7 +281,7 @@
   <div class="header-left">
     <div>
       <h1>USP Weekly Operations Calendar</h1>
-      <div class="sub" id="weekLabel">Loading week…</div>
+      <div class="sub" id="weekLabel">Loading…</div>
     </div>
 
     <div class="tabs" id="tabs"></div>
@@ -276,6 +292,7 @@
       <div class="tag"><span class="sw" style="background:var(--op)"></span>Office</div>
       <div class="tag"><span class="sw" style="background:var(--wh)"></span>Warehouse</div>
       <div class="tag"><span class="sw" style="background:var(--in)"></span>Install</div>
+      <div class="tag"><span class="sw" style="background:var(--tu)"></span>Turf</div>
       <div class="tag"><span class="sw" style="background:var(--we)"></span>Wellness</div>
       <div class="tag"><span class="sw" style="background:var(--tr)"></span>Travel</div>
       <div class="tag"><span class="sw" style="background:var(--dr)"></span>Driving</div>
@@ -293,14 +310,18 @@
 <script>
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS9dYykqhLDctkDUvYOrX5buK09uK1hHaryxnro6YiHltFPKyTCkd_ji_pWWdIPfy-XdlNB-XhTMv0-/pub?gid=0&single=true&output=csv";
 
+const PROJECTS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS9dYykqhLDctkDUvYOrX5buK09uK1hHaryxnro6YiHltFPKyTCkd_ji_pWWdIPfy-XdlNB-XhTMv0-/pub?gid=823636530&single=true&output=csv";
+
 const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 
 const AUTO_CYCLE_WEEKS = true;
 const CYCLE_SECONDS = 60;
-let cycleTimer = null;
 
+let cycleTimer = null;
 let allRows = [];
+let projectRows = [];
 let selectedWeekStart = "";
+let currentViewMode = "schedule";
 let lastEmployeeCount = 0;
 
 const FIT_LIMIT = 19;
@@ -369,47 +390,6 @@ window.addEventListener("resize", () => {
   if (lastEmployeeCount) requestAnimationFrame(() => applyAutoFitToViewport(lastEmployeeCount));
 });
 
-function normalizeDept(d=""){
-  d = d.toLowerCase().trim();
-  if (!d) return "";
-  if (d.startsWith("op") || d.startsWith("office")) return "operations";
-  if (d.startsWith("ware")) return "warehouse";
-  if (d.startsWith("inst")) return "installation";
-  if (d.startsWith("well")) return "wellness";
-  if (d.startsWith("driv")) return "driving";
-  return d;
-}
-
-function getTodayAbbrev(){
-  const map = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-  return map[new Date().getDay()];
-}
-
-function mondayOfThisWeekISO(){
-  const d = new Date();
-  const day = d.getDay();
-  const diff = (day === 0 ? -6 : 1 - day);
-  const monday = new Date(d);
-  monday.setDate(d.getDate() + diff);
-  monday.setHours(0,0,0,0);
-  const y = monday.getFullYear();
-  const m = String(monday.getMonth()+1).padStart(2,"0");
-  const da = String(monday.getDate()).padStart(2,"0");
-  return `${y}-${m}-${da}`;
-}
-
-function getDateForDay(weekStart, offset){
-  if (!weekStart) return "";
-
-  const parts = weekStart.split("-");
-  if (parts.length !== 3) return "";
-
-  const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-  d.setDate(d.getDate() + offset);
-
-  return `${d.getMonth() + 1}/${d.getDate()}`;
-}
-
 function parseCSV(text){
   const rows = [];
   let row = [], cur = "", inQ = false;
@@ -428,13 +408,13 @@ function parseCSV(text){
       continue;
     }
 
-    if (c === ',' && !inQ){
+    if (c === "," && !inQ){
       row.push(cur);
       cur = "";
       continue;
     }
 
-    if ((c === '\n' || c === '\r') && !inQ){
+    if ((c === "\n" || c === "\r") && !inQ){
       if (cur.length || row.length){
         row.push(cur);
         rows.push(row);
@@ -452,7 +432,7 @@ function parseCSV(text){
     rows.push(row);
   }
 
-  const rawHeader = (rows.shift() || []).map(h => (h||"").trim().toLowerCase());
+  const rawHeader = (rows.shift() || []).map(h => (h || "").trim().toLowerCase());
 
   const header = rawHeader.map(h => {
     if (h === "default department") return "default_department";
@@ -464,16 +444,125 @@ function parseCSV(text){
   });
 
   return rows
-    .filter(r => r.some(x => (x||"").trim() !== ""))
     .map(r => {
       const obj = {};
-      header.forEach((h,idx) => obj[h] = (r[idx]||"").trim());
+      header.forEach((h,idx) => obj[h] = (r[idx] || "").trim());
       return obj;
-    });
+    })
+    .filter(r => Object.values(r).some(v => v !== ""));
+}
+
+function normalizeDept(d=""){
+  d = d.toLowerCase().trim();
+
+  if (!d) return "";
+  if (d.startsWith("op") || d.startsWith("office")) return "operations";
+  if (d.startsWith("ware")) return "warehouse";
+  if (d.startsWith("inst")) return "installation";
+  if (d.startsWith("turf")) return "turf";
+  if (d.startsWith("well")) return "wellness";
+  if (d.startsWith("driv")) return "driving";
+
+  return d;
+}
+
+function mondayOfThisWeekISO(){
+  const d = new Date();
+  const day = d.getDay();
+  const diff = (day === 0 ? -6 : 1 - day);
+
+  d.setDate(d.getDate() + diff);
+  d.setHours(0,0,0,0);
+
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,"0");
+  const da = String(d.getDate()).padStart(2,"0");
+
+  return `${y}-${m}-${da}`;
+}
+
+function normalizeWeekStartISO(weekStart){
+  let d;
+
+  if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(weekStart)) {
+    const parts = weekStart.split("-");
+    d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  }
+  else if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(weekStart)) {
+    const parts = weekStart.split("/");
+    d = new Date(Number(parts[2]), Number(parts[0]) - 1, Number(parts[1]));
+  }
+  else {
+    d = new Date(weekStart);
+  }
+
+  if (isNaN(d.getTime())) return "";
+
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+
+  return `${y}-${m}-${day}`;
+}
+
+function getISODateForDay(weekStart, offset){
+  const startISO = normalizeWeekStartISO(weekStart);
+  if (!startISO) return "";
+
+  const parts = startISO.split("-");
+  const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  d.setDate(d.getDate() + offset);
+
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,"0");
+  const day = String(d.getDate()).padStart(2,"0");
+
+  return `${y}-${m}-${day}`;
+}
+
+function getDateForDay(weekStart, offset){
+  const iso = getISODateForDay(weekStart, offset);
+  if (!iso) return "";
+
+  const parts = iso.split("-");
+  const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+
+  return `${d.getMonth()+1}/${d.getDate()}`;
+}
+
+function formatShortDate(d){
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return `${months[d.getMonth()]} ${d.getDate()}`;
+}
+
+function getWeekRangeLabel(weekStart){
+  const startISO = normalizeWeekStartISO(weekStart);
+  if (!startISO) return weekStart || "";
+
+  const parts = startISO.split("-");
+  const start = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+
+  return `${formatShortDate(start)}–${formatShortDate(end)}`;
+}
+
+function getWeekPositionLabel(weekStart, weekStarts){
+  const index = weekStarts.indexOf(weekStart);
+  const labels = ["This Week", "Next Week", "2 Weeks Out", "3 Weeks Out"];
+  return labels[index] || `Week ${index + 1}`;
+}
+
+function getTodayISO(){
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,"0");
+  const day = String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${day}`;
 }
 
 function normDay(x){
-  const s = (x||"").trim();
+  const s = (x || "").trim();
   const d3 = s.slice(0,3).toLowerCase();
   if (!d3) return "";
   return d3.charAt(0).toUpperCase() + d3.slice(1);
@@ -513,6 +602,7 @@ function getCellBg(r){
 
   if (d === "warehouse") return "var(--wh)";
   if (d === "installation") return "var(--in)";
+  if (d === "turf") return "var(--tu)";
   if (d === "operations") return "var(--op)";
   if (d === "wellness") return "var(--we)";
   if (d === "driving") return "var(--dr)";
@@ -520,70 +610,92 @@ function getCellBg(r){
   return "#ffffff";
 }
 
-function buildTabs(weekStarts, selected, onSelect){
+function getViewList(weekStarts){
+  const views = weekStarts.map((ws, i) => ({
+    type: "schedule",
+    id: ws,
+    label: getWeekPositionLabel(ws, weekStarts)
+  }));
+
+  if (projectRows.length){
+    views.push({
+      type: "projects",
+      id: "projects",
+      label: "Projects"
+    });
+  }
+
+  return views;
+}
+
+function buildTabs(views){
   const el = document.getElementById("tabs");
   el.innerHTML = "";
 
-  if (weekStarts.length <= 1) return;
+  if (views.length <= 1) return;
 
-  const thisMon = mondayOfThisWeekISO();
-  const idxThis = weekStarts.indexOf(thisMon);
-
-  const thisWeek = (idxThis !== -1)
-    ? thisMon
-    : (weekStarts[0] || "");
-
-  const nextWeek = (idxThis !== -1)
-    ? (weekStarts[idxThis + 1] || weekStarts[weekStarts.length - 1])
-    : (weekStarts[1] || weekStarts[0]);
-
-const labels = ["This Week", "Next Week", "2 Weeks Out", "3 Weeks Out"];
-
-const tabDefs = weekStarts.map((ws, i) => ({
-  label: labels[i] || `Week ${i + 1}`,
-  week_start: ws
-}));
-
-  for (const t of tabDefs){
+  views.forEach(v => {
     const btn = document.createElement("button");
-    btn.className = "tab" + (t.week_start === selected ? " active" : "");
-    btn.textContent = t.label;
+
+    const active = currentViewMode === v.type &&
+      (v.type === "projects" || selectedWeekStart === v.id);
+
+    btn.className = "tab" + (active ? " active" : "");
+    btn.textContent = v.label;
+
     btn.onclick = () => {
-      selectedWeekStart = t.week_start;
-      render();
+      if (v.type === "projects"){
+        currentViewMode = "projects";
+        buildProjectsBoard();
+      } else {
+        currentViewMode = "schedule";
+        selectedWeekStart = v.id;
+        render();
+      }
     };
+
     el.appendChild(btn);
-  }
+  });
 }
 
-function setupAutoCycle(weekStarts){
+function setupAutoCycle(views){
   if (cycleTimer) clearInterval(cycleTimer);
 
-  if (!AUTO_CYCLE_WEEKS || weekStarts.length < 2) return;
+  if (!AUTO_CYCLE_WEEKS || views.length < 2) return;
 
   cycleTimer = setInterval(() => {
-    const currentIndex = weekStarts.indexOf(selectedWeekStart);
-    const nextIndex = currentIndex === -1
-      ? 0
-      : (currentIndex + 1) % weekStarts.length;
+    const currentId = currentViewMode === "projects" ? "projects" : selectedWeekStart;
+    const currentIndex = views.findIndex(v => v.id === currentId);
+    const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % views.length;
+    const next = views[nextIndex];
 
-    selectedWeekStart = weekStarts[nextIndex];
-    render();
+    if (next.type === "projects"){
+      currentViewMode = "projects";
+      buildProjectsBoard();
+    } else {
+      currentViewMode = "schedule";
+      selectedWeekStart = next.id;
+      render();
+    }
   }, CYCLE_SECONDS * 1000);
 }
 
-function buildBoard(records){
+function buildScheduleBoard(records){
   const weekStart = (records[0]?.week_start) || "";
+  const weekStarts = [...new Set(allRows.map(r => r.week_start).filter(Boolean))].sort();
+
+  const weekPosition = getWeekPositionLabel(weekStart, weekStarts);
+  const weekRange = getWeekRangeLabel(weekStart);
 
   document.getElementById("weekLabel").textContent =
-    weekStart ? `Week of ${weekStart}` : "";
+    weekStart ? `${weekPosition} • ${weekRange}` : "";
 
-  const today = getTodayAbbrev();
+  const todayISO = getTodayISO();
 
   const byEmployee = new Map();
 
   for (const r of records){
-    if (!r.employee) continue;
+    if (!r.employee || !r.day) continue;
 
     if (!byEmployee.has(r.employee)){
       byEmployee.set(r.employee, []);
@@ -621,6 +733,7 @@ function buildBoard(records){
   });
 
   const table = document.getElementById("board");
+  table.className = "board";
   table.innerHTML = "";
 
   const thead = document.createElement("thead");
@@ -636,13 +749,14 @@ function buildBoard(records){
     const th = document.createElement("th");
 
     const dateLabel = getDateForDay(weekStart, i);
+    const columnISO = getISODateForDay(weekStart, i);
 
     th.innerHTML = `
       <div class="date-label">${dateLabel}</div>
       <div class="day-label">${d.toUpperCase()}</div>
     `;
 
-    if (d === today){
+    if (columnISO === todayISO){
       th.classList.add("today");
     }
 
@@ -663,10 +777,12 @@ function buildBoard(records){
 
     const perDay = dayIndexByEmployee.get(e) || {};
 
-    for (const d of DAYS){
+    for (let i = 0; i < DAYS.length; i++){
+      const d = DAYS[i];
       const td = document.createElement("td");
+      const columnISO = getISODateForDay(weekStart, i);
 
-      if (d === today){
+      if (columnISO === todayISO){
         td.classList.add("today");
       }
 
@@ -704,6 +820,66 @@ function buildBoard(records){
   requestAnimationFrame(() => applyAutoFitToViewport(employees.length));
 }
 
+function buildProjectsBoard(){
+  currentViewMode = "projects";
+
+  document.getElementById("weekLabel").textContent = "Projects";
+
+  const weekStarts = [...new Set(allRows.map(r => r.week_start).filter(Boolean))].sort();
+  const views = getViewList(weekStarts);
+  buildTabs(views);
+  setupAutoCycle(views);
+
+  const table = document.getElementById("board");
+  table.className = "board project-board";
+  table.innerHTML = "";
+
+  const headers = ["Project Name", "Ship Date", "Size", "Model", "Install Team", "Install Date"];
+
+  const thead = document.createElement("thead");
+  const hr = document.createElement("tr");
+
+  headers.forEach(h => {
+    const th = document.createElement("th");
+    th.textContent = h.toUpperCase();
+    hr.appendChild(th);
+  });
+
+  thead.appendChild(hr);
+  table.appendChild(thead);
+
+  const tbody = document.createElement("tbody");
+
+  projectRows
+    .filter(r => r.project_name || r["project name"])
+    .forEach(r => {
+      const tr = document.createElement("tr");
+
+      const values = [
+        r.project_name || r["project name"] || "",
+        r.ship_date || r["ship date"] || "",
+        r.size || "",
+        r.model || "",
+        r.install_team || r["install team"] || "",
+        r.install_date || r["install date"] || ""
+      ];
+
+      values.forEach((v, i) => {
+        const td = document.createElement("td");
+        td.innerHTML = `
+          <div class="cell" style="background:#f8fafc">
+            <div class="${i === 0 ? "big" : "small"}">${v}</div>
+          </div>
+        `;
+        tr.appendChild(td);
+      });
+
+      tbody.appendChild(tr);
+    });
+
+  table.appendChild(tbody);
+}
+
 function render(){
   const weekStarts = [...new Set(allRows.map(r => r.week_start).filter(Boolean))].sort();
 
@@ -714,25 +890,37 @@ function render(){
       : (weekStarts[0] || "");
   }
 
-  buildTabs(weekStarts, selectedWeekStart);
+  const views = getViewList(weekStarts);
+  buildTabs(views);
+
+  if (currentViewMode === "projects"){
+    buildProjectsBoard();
+    return;
+  }
 
   const filtered = selectedWeekStart
     ? allRows.filter(r => r.week_start === selectedWeekStart)
     : allRows;
 
-  buildBoard(filtered);
-
-  setupAutoCycle(weekStarts);
+  buildScheduleBoard(filtered);
+  setupAutoCycle(views);
 }
 
 async function init(){
-  const res = await fetch(CSV_URL, {cache:"no-store"});
-  const text = await res.text();
+  const [scheduleRes, projectsRes] = await Promise.all([
+    fetch(CSV_URL,{cache:"no-store"}),
+    fetch(PROJECTS_CSV_URL,{cache:"no-store"})
+  ]);
 
-  allRows = parseCSV(text);
+  const scheduleText = await scheduleRes.text();
+  const projectsText = await projectsRes.text();
+
+  allRows = parseCSV(scheduleText).filter(r => r.employee && r.day);
+  projectRows = parseCSV(projectsText);
+
   render();
 
-  setTimeout(init, 120000);
+  setTimeout(init,120000);
 }
 
 init();
