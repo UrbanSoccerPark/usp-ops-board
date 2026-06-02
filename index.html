@@ -540,10 +540,12 @@ function buildTabs(weekStarts, selected, onSelect){
     ? (weekStarts[idxThis + 1] || weekStarts[weekStarts.length - 1])
     : (weekStarts[1] || weekStarts[0]);
 
-  const tabDefs = [
-    {label:"This Week", week_start:thisWeek},
-    {label:"Next Week", week_start:nextWeek}
-  ].filter((t, i, arr) => t.week_start && arr.findIndex(x => x.week_start === t.week_start) === i);
+const labels = ["This Week", "Next Week", "2 Weeks Out", "3 Weeks Out"];
+
+const tabDefs = weekStarts.map((ws, i) => ({
+  label: labels[i] || `Week ${i + 1}`,
+  week_start: ws
+}));
 
   for (const t of tabDefs){
     const btn = document.createElement("button");
