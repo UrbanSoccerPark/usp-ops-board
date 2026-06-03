@@ -273,6 +273,52 @@
       -webkit-line-clamp:1;
       opacity:.95;
     }
+
+    .status-not-started{
+  background:#ef4444 !important;
+  color:white;
+}
+
+.status-picking{
+  background:#a855f7 !important;
+  color:white;
+}
+
+.status-pre-build{
+  background:#3b82f6 !important;
+  color:white;
+}
+
+.status-packing{
+  background:#f97316 !important;
+  color:white;
+}
+
+.status-packed{
+  background:#86efac !important;
+}
+
+.status-storage{
+  background:#fde047 !important;
+}
+
+.status-shipped{
+  background:#15803d !important;
+  color:white;
+}
+
+.status-not-started .big,
+.status-picking .big,
+.status-pre-build .big,
+.status-packing .big,
+.status-shipped .big,
+.status-not-started .small,
+.status-picking .small,
+.status-pre-build .small,
+.status-packing .small,
+.status-shipped .small{
+  color:white;
+}
   </style>
 </head>
 
@@ -820,6 +866,23 @@ function buildScheduleBoard(records){
   requestAnimationFrame(() => applyAutoFitToViewport(employees.length));
 }
 
+function getProjectCellClass(header, value){
+  const h = (header || "").toLowerCase().trim();
+  const v = (value || "").toLowerCase().trim();
+
+  if (h === "status"){
+    if (v === "not started") return "status-not-started";
+    if (v === "picking") return "status-picking";
+    if (v === "pre-build") return "status-pre-build";
+    if (v === "packing") return "status-packing";
+    if (v === "packed") return "status-packed";
+    if (v === "storage") return "status-storage";
+    if (v === "shipped") return "status-shipped";
+  }
+
+  return "";
+}
+  
 function buildProjectsBoard(){
   currentViewMode = "projects";
 
@@ -874,20 +937,18 @@ function buildProjectsBoard(){
 ];
 
       values.forEach((v, i) => {
-        const td = document.createElement("td");
-        td.innerHTML = `
-          <div class="cell" style="background:#f8fafc">
-            <div class="${i === 0 ? "big" : "small"}">${v}</div>
-          </div>
-        `;
-        tr.appendChild(td);
-      });
+  const td = document.createElement("td");
 
-      tbody.appendChild(tr);
-    });
+  const cellClass = getProjectCellClass(headers[i], v);
 
-  table.appendChild(tbody);
-}
+  td.innerHTML = `
+    <div class="cell ${cellClass}" style="background:#f8fafc">
+      <div class="${i === 0 ? "big" : "small"}">${v}</div>
+    </div>
+  `;
+
+  tr.appendChild(td);
+});
 
 function render(){
   const weekStarts = [...new Set(allRows.map(r => r.week_start).filter(Boolean))].sort();
