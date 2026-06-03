@@ -834,7 +834,15 @@ function buildProjectsBoard(){
   table.className = "board project-board";
   table.innerHTML = "";
 
-  const headers = ["Project Name", "Ship Date", "Size", "Model", "Install Team", "Install Date"];
+  const headers = [
+  "Project Name",
+  "Ship Date",
+  "Size",
+  "Model",
+  "Install Team",
+  "Install Date",
+  "Status"
+];
 
   const thead = document.createElement("thead");
   const hr = document.createElement("tr");
@@ -856,13 +864,14 @@ function buildProjectsBoard(){
       const tr = document.createElement("tr");
 
       const values = [
-        r.project_name || r["project name"] || "",
-        r.ship_date || r["ship date"] || "",
-        r.size || "",
-        r.model || "",
-        r.install_team || r["install team"] || "",
-        r.install_date || r["install date"] || ""
-      ];
+  r.project_name || r["project name"] || "",
+  r.ship_date || r["ship date"] || "",
+  r.size || "",
+  r.model || "",
+  r.install_team || r["install team"] || "",
+  r.install_date || r["install date"] || "",
+  r.status || ""
+];
 
       values.forEach((v, i) => {
         const td = document.createElement("td");
